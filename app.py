@@ -30,8 +30,8 @@ st.set_page_config(page_title="ClaimScope · Insurance analytics", layout="wide"
                    initial_sidebar_state="expanded")
 NAV_VIEWS = ["Claims", "Overview", "Disparities", "Data preparation", "Models", "Evaluation", "Findings"]
 st.markdown("<style>" + Path(__file__).with_name("ui.css").read_text() + motion.motion_css() + "</style>", unsafe_allow_html=True)
+st.html(motion.motion_script(), unsafe_allow_javascript=True)  # First, so it sets the theme before the skeleton paints.
 st.html(motion.boot_html(NAV_VIEWS, NAV_VIEWS[0]))
-st.html(motion.motion_script(), unsafe_allow_javascript=True)
 
 import io
 import html
@@ -58,7 +58,7 @@ def mark_rendered():
 
 # Colours below pass the colourblind-separation checks on a white surface.
 NAVY, RED, GREY = "#375DFB", "#C25263", "#778196"
-MODEL_COLORS = ["#375DFB", "#EB6834", "#1BAF7A", "#6B3FA0"]
+MODEL_COLORS = ["#375DFB", "#D9541F", "#128A5F", "#6B3FA0"]
 INK, AXIS_TEXT, LINE = "#34373C", "#5F636B", "#E9EAED"
 
 # Visual thesis: quiet white surfaces, precise type, and a single cobalt action color.
@@ -74,7 +74,7 @@ def show_chart(chart):
                              titleFontSize=12, titleFontWeight="normal", titleColor=AXIS_TEXT,
                              gridColor=LINE, domainColor=LINE, ticks=False, tickCount=6, labelPadding=6)
              .configure_legend(orient="top", title=None, labelFontSize=12, labelColor=INK,
-                               symbolType="square", labelLimit=320)
+                               symbolType="square", symbolOpacity=1, labelLimit=320)
              .configure_title(anchor="start", fontSize=14, fontWeight="normal", color=INK,
                               subtitleFontSize=12, subtitleColor=AXIS_TEXT))
     st.altair_chart(chart, width="stretch", theme=None)
@@ -187,12 +187,12 @@ def confusion_chart(name, r, largest):
     x = alt.X("Predicted:N", sort=classes, axis=alt.Axis(orient="bottom", labelAngle=0, grid=False))
     y = alt.Y("Actual:N", sort=classes, axis=alt.Axis(grid=False))
     cells = alt.Chart(data).mark_rect(cornerRadius=4, stroke="white", strokeWidth=2).encode(
-        x=x, y=y, color=alt.Color("Claims:Q", legend=None, scale=alt.Scale(domain=[0, largest], range=["#EEF2FF", NAVY])),
+        x=x, y=y, color=alt.Color("Claims:Q", legend=None, scale=alt.Scale(domain=[0, largest], range=["#EEF2FF", "#BFCDFF"])),
         tooltip=[alt.Tooltip("Actual:N"), alt.Tooltip("Predicted:N"), alt.Tooltip("Claims:Q", format=","),
                  alt.Tooltip("Share:Q", title="Share of test set", format=".1%")])
-    counts = alt.Chart(data).mark_text(fontSize=16, fontWeight="bold").encode(
-        x=x, y=y, text=alt.Text("Claims:Q", format=","),
-        color=alt.condition(f"datum.Claims > {largest * .55}", alt.value("white"), alt.value(INK)))
+    # The scale stays light so one text colour reads on every cell, in both themes.
+    counts = alt.Chart(data).mark_text(fontSize=16, fontWeight="bold", color=INK).encode(
+        x=x, y=y, text=alt.Text("Claims:Q", format=","))
     show_chart((cells + counts).properties(height=220, title=alt.TitleParams(
         name, subtitle=f"acc={r['test_acc']:.2f} · recall={r['recall']:.2f}")))
 
@@ -484,6 +484,7 @@ with action_bar:
     st.download_button("Export claims", df.to_csv(index=False).encode(), "claims.csv", "text/csv", on_click=download_feedback, type="primary", icon=":material/download:", width="content")
     if st.button("Model settings", icon=":material/tune:", key="open_model_settings", width="content"):
         st.session_state.settings_open = True
+    st.html(motion.theme_toggle_html(), width="content")
 if st.session_state.get("settings_open", False):
     model_settings_dialog()
 overall = df["REPUDIATED"].mean()
@@ -779,7 +780,7 @@ with st.container(key="page_view"):
         largest = max(int(r["cm"].max()) for r in results.values())
         fewest_missed = min(results, key=lambda m: results[m]["cm"][1, 0])
         missed_cm = results[fewest_missed]["cm"]
-        explain(how="Rows are what actually happened and columns are what the model predicted. The top-left and bottom-right cells are correct. <b>Bottom-left</b> is a repudiation the model missed, and <b>top-right</b> is an approved claim it wrongly flagged. All four share one colour scale, and darker means more claims.",
+        explain(how="Rows are what actually happened and columns are what the model predicted. The top-left and bottom-right cells are correct. <b>Bottom-left</b> is a repudiation the model missed, and <b>top-right</b> is an approved claim it wrongly flagged. All four share one colour scale, and a stronger colour means more claims.",
                 data=f"<b>{e(fewest_missed)}</b> misses the fewest repudiations, {missed_cm[1, 0]:,} of {missed_cm[1].sum():,}, while wrongly flagging {missed_cm[0, 1]:,} of {missed_cm[0].sum():,} approved claims.")
         cols = st.columns(2)
         for i, (name, r) in enumerate(results.items()):

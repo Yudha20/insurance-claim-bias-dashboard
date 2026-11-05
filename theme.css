@@ -1,0 +1,127 @@
+/* Colour tokens. Both modes are defined here; everything else refers to these names. */
+:root {
+  color-scheme:light;
+  --page:#fafafa;--surface:#fff;--surface-2:#f4f5f7;--hover:#eef0f3;
+  --ink:#34373c;--ink-2:#4f535a;--muted:#5f636b;--subtle:#666a71;
+  --line:#e9eaed;--line-hover:#dce2ef;--field-line:#8a8e96;
+  --accent:#365cff;--accent-ink:#2e50e6;--on-accent:#fff;
+  --tag-bg:#eef2ff;--tag-ink:#4a5db0;
+  --warn-bg:#fff8db;--warn-ink:#6f5300;
+  --bone:#eef0f3;--bone-glint:#f8f9fb;
+  --lift:0 6px 18px #2c344814;--lift-hover:0 8px 24px #2c344824;--card-hover:0 4px 16px #2c344812;
+  --cs-glass-bg:radial-gradient(120% 100% at 28% 0%,#ffffffb8 0%,#fff0 62%),#365cff1a;
+  --cs-glass-shadow:0 8px 24px #365cff24;--cs-glass-shadow-hover:0 10px 30px #365cff38;
+  --cs-glass-blur:blur(10px) saturate(180%);
+}
+html.cs-dark {
+  color-scheme:dark;
+  --page:#111214;--surface:#1a1b1f;--surface-2:#232428;--hover:#2c2e33;
+  --ink:#e7e9ee;--ink-2:#c9ccd3;--muted:#b0b4bc;--subtle:#a2a6af;
+  --line:#2e3036;--line-hover:#3f424a;--field-line:#7a7e87;
+  --accent:#365cff;--accent-ink:#a9baff;--on-accent:#fff;
+  --tag-bg:#262d47;--tag-ink:#bccaff;
+  --warn-bg:#2e2710;--warn-ink:#f3d27a;
+  --bone:#26282d;--bone-glint:#32343a;
+  --lift:0 6px 18px #00000059;--lift-hover:0 8px 24px #00000080;--card-hover:0 4px 16px #00000059;
+  --cs-glass-bg:radial-gradient(120% 100% at 28% 0%,#ffffff1c 0%,#fff0 62%),#7c93ff29;
+  --cs-glass-shadow:0 8px 24px #365cff33;--cs-glass-shadow-hover:0 10px 30px #365cff4d;
+}
+
+/* ---------- Toggle ---------- */
+[data-testid=stElementContainer]:has(.cs-theme-toggle) {width:36px!important;flex:none;}
+.cs-theme-toggle {position:relative;display:block;width:36px;height:36px;min-height:36px;padding:0;margin:0;border:0;border-radius:999px;cursor:pointer;color:var(--ink);background:var(--surface);box-shadow:var(--lift);transition:box-shadow .15s,transform .5s var(--cs-spring,cubic-bezier(.34,1.4,.64,1));}
+.cs-theme-toggle:hover {box-shadow:var(--lift-hover);filter:none;}
+.cs-theme-toggle:active {transform:scale(.92);transition-duration:.08s;}
+.cs-theme-toggle:focus-visible {outline:2px solid var(--accent-ink);outline-offset:2px;}
+.cs-theme-icon {position:absolute;inset:8px;background:currentColor;transition:transform .6s var(--cs-spring,cubic-bezier(.34,1.4,.64,1)),opacity .2s ease;}
+.cs-theme-sun {-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='12' cy='12' r='4'/%3E%3Cpath d='M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4'/%3E%3C/svg%3E") center/contain no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='12' cy='12' r='4'/%3E%3Cpath d='M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4'/%3E%3C/svg%3E") center/contain no-repeat;}
+.cs-theme-moon {-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linejoin='round'%3E%3Cpath d='M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z'/%3E%3C/svg%3E") center/contain no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linejoin='round'%3E%3Cpath d='M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z'/%3E%3C/svg%3E") center/contain no-repeat;}
+/* The button shows what a click switches to. */
+.cs-theme-sun {opacity:0;transform:rotate(-90deg) scale(.4);}
+html.cs-dark .cs-theme-sun {opacity:1;transform:none;}
+html.cs-dark .cs-theme-moon {opacity:0;transform:rotate(90deg) scale(.4);}
+
+/* ---------- The switch itself ---------- */
+::view-transition-old(root),::view-transition-new(root) {animation:none;mix-blend-mode:normal;}
+::view-transition-old(root) {z-index:1;}
+::view-transition-new(root) {z-index:2;}
+html.cs-theming,html.cs-theming *,html.cs-theming *::before,html.cs-theming *::after {transition:background-color .4s ease,color .4s ease,border-color .4s ease,fill .4s ease,box-shadow .4s ease,filter .4s ease!important;}
+
+/* ---------- Both modes: Streamlit colours that fall short of contrast targets ---------- */
+/* Streamlit's text colour is near-black in config.toml, because its table headers are that
+   colour at 60% and cannot be styled otherwise. Everything else is set back to --ink here. */
+[data-testid=stApp],[data-testid=stSidebar],[role=dialog],[data-testid=stPopoverBody] {color:var(--ink);}
+:is([data-testid=stMarkdownContainer],[data-testid=stWidgetLabel],[data-testid=stHeading],[data-testid=stHeadingIcon],[data-testid=stMetricLabel],[data-testid=stMetricValue],[data-testid=stExpander],[data-testid=stHtml],[data-testid=stTooltipIcon]) {color:var(--ink);}
+:is([data-testid=stMarkdownContainer],[data-testid=stWidgetLabel],[data-testid=stHeading],[data-testid=stMetricLabel],[data-testid=stMetricValue]) :is(p,h1,h2,h3,h4,li,strong,em,span,label) {color:inherit;}
+[data-testid=stApp] input,[data-testid=stApp] textarea,[role=dialog] input,[data-testid=stPopoverBody] input {color:var(--ink);}
+/* Button labels take the button's colour. */
+button [data-testid=stMarkdownContainer],button [data-testid=stMarkdownContainer] p {color:inherit!important;}
+.st-key-header_actions :is([data-testid=stPopover],[data-testid=stButton]) button {color:var(--ink)!important;}
+:is([data-testid=stMain],[role=dialog],[data-testid=stPopoverBody]) [data-testid^=stBaseButton-secondary] {color:var(--ink);}
+:is(.st-key-page_view,[role=dialog]) [data-testid^=stBaseButton-primary] {color:var(--on-accent)!important;}
+:is(.st-key-page_view,[role=dialog]) [data-testid^=stBaseButton-primary] [data-testid=stIconMaterial] {color:inherit;}
+html.cs-dark [data-testid=stSidebarUserContent] button [data-testid=stIconMaterial],html.cs-dark .st-key-header_actions button [data-testid=stIconMaterial] {color:inherit;}
+/* Captions: Streamlit also fades them with opacity, on top of their colour. */
+[data-testid=stCaptionContainer],[data-testid=stCaptionContainer] * {opacity:1!important;color:var(--subtle)!important;}
+/* The classification report is plain text; syntax colours only reduced contrast. */
+[data-testid=stCode] :is(code,code *) {color:var(--ink)!important;}
+[data-testid=stTab] p {color:var(--muted);}
+[data-testid=stTab][aria-selected=true] p {color:var(--accent-ink);}
+[data-testid=stAlertContainer] {background:var(--warn-bg)!important;color:var(--warn-ink)!important;}
+[data-testid=stAlertContentWarning],[data-testid=stAlertContentWarning] :is(p,strong,em) {color:var(--warn-ink)!important;}
+[data-testid=stSliderThumbValue] {color:var(--accent-ink)!important;}
+[data-testid=stSliderTickBar],[data-testid=stSliderTickBar] * {color:var(--subtle)!important;}
+[data-testid=stElementToolbarButtonContainer] {color:var(--muted)!important;background:var(--surface)!important;}
+[data-testid=stBaseButton-elementToolbar] {color:var(--muted)!important;}
+input::placeholder,textarea::placeholder {color:var(--subtle)!important;opacity:1!important;}
+[data-testid=stNumberInputContainer] {border:1px solid var(--field-line)!important;box-shadow:none!important;}
+[data-testid=stTextInputRootElement],[data-testid=stTextInput]>div>div,.react-aria-ComboBox [role=group] {border-color:var(--field-line)!important;}
+[data-testid=stFileUploaderDropzone] {border:1px dashed var(--field-line)!important;}
+[data-testid=stFileUploaderDropzoneInstructions],[data-testid=stFileUploaderDropzoneInstructions] * {color:var(--subtle)!important;}
+
+/* ---------- Dark: Streamlit draws these from its fixed light theme ---------- */
+html.cs-dark,html.cs-dark body {background:var(--page);}
+html.cs-dark :is([data-testid=stApp],[data-testid=stAppViewContainer],[data-testid=stMain]) {background:var(--page)!important;color:var(--ink);}
+html.cs-dark [data-testid=stSidebar] {background:var(--surface)!important;color:var(--ink);}
+html.cs-dark [data-testid=stIconMaterial],html.cs-dark [data-testid=stExpander] summary,html.cs-dark [data-testid=stExpander] summary * {color:var(--ink);}
+html.cs-dark [data-testid=stTooltipHoverTarget] svg,html.cs-dark [data-testid=stTooltipHoverTarget] svg * {stroke:var(--muted)!important;}
+
+html.cs-dark :is([data-testid=stTextInputRootElement],[data-testid=stNumberInputContainer],.react-aria-ComboBox [role=group],[data-baseweb=input],[data-baseweb=base-input]) {background:var(--surface-2)!important;}
+html.cs-dark input,html.cs-dark textarea {color:var(--ink)!important;-webkit-text-fill-color:var(--ink);background:transparent!important;}
+html.cs-dark .react-aria-ComboBox button,html.cs-dark .react-aria-ComboBox svg {color:var(--ink)!important;}
+html.cs-dark :is([data-testid=stNumberInputStepDown],[data-testid=stNumberInputStepUp]) {color:var(--ink)!important;background:transparent!important;}
+html.cs-dark :is([data-testid=stNumberInputStepDown],[data-testid=stNumberInputStepUp]):disabled {color:var(--subtle)!important;}
+html.cs-dark [data-testid=stSelectboxVirtualDropdown],html.cs-dark [data-baseweb=popover]>div {background:var(--surface-2)!important;color:var(--ink);}
+html.cs-dark [role=option] {color:var(--ink)!important;background:transparent;}
+html.cs-dark [role=option]:is(:hover,[data-focused=true],[data-focus-visible=true],[aria-selected=true]) {background:var(--hover)!important;}
+html.cs-dark [data-baseweb=tag] {background:var(--tag-bg)!important;color:var(--tag-ink)!important;}
+html.cs-dark [data-baseweb=tag] * {color:var(--tag-ink)!important;}
+
+html.cs-dark :is([role=dialog],[data-testid=stPopoverBody]) {background:var(--surface)!important;color:var(--ink);border-color:var(--line)!important;}
+html.cs-dark [role=dialog] :is(h1,h2,h3,button[aria-label=Close],svg) {color:var(--ink);}
+html.cs-dark [data-testid=stToast] {background:var(--surface-2)!important;color:var(--ink);}
+html.cs-dark [data-testid=stToast] * {color:var(--ink);}
+html.cs-dark :is([data-baseweb=tooltip],[data-testid=stTooltipContent]),html.cs-dark [data-baseweb=tooltip] * {background:var(--surface-2)!important;color:var(--ink)!important;}
+html.cs-dark [data-testid=stFileUploaderDropzone] {background:var(--surface-2)!important;}
+html.cs-dark :is([data-testid=stFileUploaderDropzone],[data-testid=stPopoverBody],.st-key-page_view,[role=dialog]) [data-testid^=stBaseButton-secondary],html.cs-dark [data-testid=stPopoverButton] {background:var(--hover)!important;color:var(--ink);}
+html.cs-dark [data-testid=stFileUploaderDropzone] button * {color:var(--ink)!important;}
+html.cs-dark :is([data-testid=stExpander] details,[data-testid=stExpanderDetails]) {background:transparent!important;border-color:var(--line)!important;}
+html.cs-dark [data-testid=stExpander] details {border:1px solid var(--line)!important;}
+html.cs-dark [data-testid=stExpander] summary:hover {background:var(--hover)!important;}
+html.cs-dark [data-testid=stTabs] [role=tablist] {border-color:var(--line)!important;}
+html.cs-dark [data-testid=stTabs] [role=tablist]>* {border-color:var(--line);}
+html.cs-dark [data-testid=stCode],html.cs-dark [data-testid=stCode] :is(pre,code) {background:var(--surface-2)!important;color:var(--ink)!important;}
+html.cs-dark [data-testid=stCode] code * {color:var(--ink)!important;}
+html.cs-dark [data-testid=stVerticalBlockBorderWrapper],html.cs-dark [data-testid=stVerticalBlock][data-test-border],html.cs-dark [data-testid=stLayoutWrapper]>[data-testid=stVerticalBlock] {border-color:var(--line)!important;}
+html.cs-dark [data-testid=stVerticalBlockBorderWrapper]>div {background:var(--surface);}
+html.cs-dark [data-testid=stSidebarUserContent] button:hover {background:transparent;}
+html.cs-dark [data-testid=stSkipToContent] {color:var(--accent-ink);}
+
+/* Tables and charts draw on canvas and SVG, out of reach of normal CSS. Inverting lightness
+   and rotating hue back keeps blue blue and red red while making them readable on dark. */
+html.cs-dark [data-testid=stDataFrameResizable] {filter:invert(.905) hue-rotate(180deg);}
+html.cs-dark [data-testid=stVegaLiteChart] {background:var(--surface)!important;border-radius:8px;}
+html.cs-dark [data-testid=stVegaLiteChart] svg {filter:invert(.905) hue-rotate(180deg);}
+html.cs-dark [data-testid=stVegaLiteChart] svg .background {fill:transparent!important;}
+html.cs-dark #vg-tooltip-element {background:var(--surface-2)!important;color:var(--ink)!important;border-color:var(--line-hover)!important;}
+html.cs-dark #vg-tooltip-element :is(td,th,table) {color:var(--ink)!important;}

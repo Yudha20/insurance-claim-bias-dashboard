@@ -1,6 +1,6 @@
-:root {--space:4px;--ink:#34373c;--muted:#757980;--line:#e9eaed;--accent:#365cff;--radius:12px;}
+:root {--space:4px;--radius:12px;}
 html,body,[data-testid=stApp] {font-family:"Product Sans",Arial,sans-serif;color:var(--ink);}
-[data-testid=stAppViewContainer] {background:#fafafa;}
+[data-testid=stAppViewContainer] {background:var(--page);}
 [data-testid=stHeader] {display:none!important;}
 [data-testid=stMainBlockContainer] {padding:24px 24px 32px;max-width:1600px;}
 [data-testid=stElementContainer]:has(style) {display:none;}
@@ -8,22 +8,22 @@ html,body,[data-testid=stApp] {font-family:"Product Sans",Arial,sans-serif;color
 h1,h2,h3,.page-title {color:var(--ink);font-weight:500;letter-spacing:-.4px;}
 h1 {font-size:28px;} h2 {font-size:20px;} h3 {font-size:18px;}
 p,label,input,button {font-size:13px;}
-small,[data-testid=stCaptionContainer] {font-size:12px;color:#6b6f76;}
+small,[data-testid=stCaptionContainer] {font-size:12px;color:var(--subtle);}
 .page-title {font-size:20px;line-height:28px;}
-.page-subtitle {font-size:12px;color:#7d8188;line-height:20px;margin-top:4px;}
-.kpi {box-sizing:border-box;background:#fff;border:1px solid var(--line);border-radius:12px;padding:20px;min-height:144px;transition:box-shadow .16s ease,border-color .16s ease;}
-.kpi:hover {box-shadow:0 4px 16px #2c344812;border-color:#dce2ef;}
-.kpi-label {font-size:13px;color:#74777e;margin-bottom:12px;}
+.page-subtitle {font-size:12px;color:var(--subtle);line-height:20px;margin-top:4px;}
+.kpi {box-sizing:border-box;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:20px;min-height:144px;transition:box-shadow .16s ease,border-color .16s ease;}
+.kpi:hover {box-shadow:var(--card-hover);border-color:var(--line-hover);}
+.kpi-label {font-size:13px;color:var(--subtle);margin-bottom:12px;}
 .kpi-value {font-size:32px;font-weight:500;line-height:40px;letter-spacing:-1px;font-variant-numeric:tabular-nums;}
-.kpi-note {font-size:12px;color:#85888f;margin-top:8px;}
-.kpi-tag {display:inline-block;font-size:12px;line-height:20px;background:#eef2ff;color:#5b6fbc;border-radius:4px;padding:0 8px;margin-left:8px;}
+.kpi-note {font-size:12px;color:var(--subtle);margin-top:8px;}
+.kpi-tag {display:inline-block;font-size:12px;line-height:20px;background:var(--tag-bg);color:var(--tag-ink);border-radius:4px;padding:0 8px;margin-left:8px;}
 [data-testid=stLayoutWrapper]:has(.kpi) {min-height:144px;}
-[data-testid=stVerticalBlockBorderWrapper]>div {border-radius:12px;padding:20px;background:#fff;border-color:var(--line);}
+[data-testid=stVerticalBlockBorderWrapper]>div {border-radius:12px;padding:20px;background:var(--surface);border-color:var(--line);}
 button,input,[data-baseweb=select]>div,[data-testid=stExpander],[data-testid=stDataFrame],[data-testid=stAlert] {border-radius:12px;}
 button {min-height:36px;transition:background .12s,border-color .12s;}
-button:hover {filter:brightness(.95);border-color:#b9bec8;}
+button:hover {filter:brightness(.95);border-color:var(--line-hover);}
 button:active {filter:brightness(.90);}
-button:focus-visible,input:focus-visible {outline:2px solid var(--accent);outline-offset:4px;}
+button:focus-visible,input:focus-visible {outline:2px solid var(--accent-ink);outline-offset:4px;}
 .st-key-header_actions [data-testid=stHorizontalBlock] {gap:8px!important;justify-content:flex-end;}
 .st-key-header_actions button {border-radius:999px!important;height:36px;min-height:36px;padding:4px 16px;white-space:nowrap;}
 [data-testid=stDialog] [role=dialog] {border-radius:12px;max-height:calc(100vh - 48px);overflow-y:auto;}
@@ -46,17 +46,17 @@ button:focus-visible,input:focus-visible {outline:2px solid var(--accent);outlin
 
 /* Controls have one perimeter; nested dropdown arrows are not separate buttons. */
 [data-baseweb=select] button {min-height:0!important;border:0!important;outline:none!important;box-shadow:none!important;background:transparent!important;border-radius:0!important;filter:none!important;}
-[data-baseweb=select]>div {box-shadow:none!important;border:1px solid #e1e3e8!important;}
-[data-baseweb=select]:focus-within>div {border-color:#365cff!important;}
+[data-baseweb=select]>div {box-shadow:none!important;border:1px solid var(--field-line)!important;}
+[data-baseweb=select]:focus-within>div {border-color:var(--accent-ink)!important;}
 [data-testid=stTextInput] input {outline:none!important;box-shadow:none!important;border:0!important;}
-[data-testid=stTextInput]>div>div {border:1px solid #e1e3e8;box-shadow:none!important;}
-[data-testid=stTextInput]:focus-within>div>div {border-color:#365cff;}
+[data-testid=stTextInput]>div>div {border:1px solid var(--field-line);box-shadow:none!important;}
+[data-testid=stTextInput]:focus-within>div>div {border-color:var(--accent-ink);}
 [data-testid=stMain], [data-testid=stMainBlockContainer], [data-testid=stColumn] {min-width:0;}
 [data-testid=stDataFrame] {max-width:100%;overflow:hidden;}
 [data-testid=stToast] {font-family:"Product Sans",sans-serif;font-size:13px;border-radius:12px;}
 /* Current Streamlit combobox: only the enclosing group owns a border. */
-.react-aria-ComboBox [role=group] {border:1px solid #e1e3e8!important;border-radius:12px!important;box-shadow:none!important;background:#fff;}
-.react-aria-ComboBox [role=group]:focus-within {border-color:#365cff!important;}
+.react-aria-ComboBox [role=group] {border:1px solid var(--field-line)!important;border-radius:12px!important;box-shadow:none!important;background:var(--surface);}
+.react-aria-ComboBox [role=group]:focus-within {border-color:var(--accent-ink)!important;}
 .react-aria-ComboBox input {border:0!important;outline:none!important;box-shadow:none!important;background:transparent!important;border-radius:0!important;}
 .react-aria-ComboBox button,.react-aria-ComboBox button:hover,.react-aria-ComboBox button:active {border:0!important;outline:none!important;box-shadow:none!important;background:transparent!important;filter:none!important;min-height:0!important;border-radius:0!important;}
 
@@ -67,7 +67,7 @@ button:focus-visible,input:focus-visible {outline:2px solid var(--accent);outlin
 /* Navigation. Everything is CSS-driven: the checkbox toggles width in the browser, with no rerun.
    Icons sit in one 64px column, so they stay put when the sidebar collapses to a rail. */
 [data-testid=stApp] {--nav-width:240px;}
-[data-testid=stSidebar] {position:fixed!important;top:0;left:0;bottom:0;width:var(--nav-width)!important;min-width:var(--nav-width)!important;max-width:var(--nav-width)!important;z-index:100;transform:none!important;transition:none!important;background:#fff;border-right:1px solid var(--line);overflow:hidden;box-shadow:none;}
+[data-testid=stSidebar] {position:fixed!important;top:0;left:0;bottom:0;width:var(--nav-width)!important;min-width:var(--nav-width)!important;max-width:var(--nav-width)!important;z-index:100;transform:none!important;transition:none!important;background:var(--surface);border-right:1px solid var(--line);overflow:hidden;box-shadow:none;}
 [data-testid=stSidebarHeader],[data-testid=stSidebarCollapsedControl] {display:none;}
 [data-testid=stSidebarContent] {padding:0!important;overflow-x:hidden;}
 [data-testid=stSidebarUserContent] {padding:76px 8px 12px!important;}
@@ -75,17 +75,17 @@ button:focus-visible,input:focus-visible {outline:2px solid var(--accent);outlin
 [data-testid=stSidebar] [data-testid=stVerticalBlock] {gap:4px!important;padding:0!important;}
 [data-testid=stMain] {margin-left:var(--nav-width);width:calc(100% - var(--nav-width));transition:none;}
 
-[data-testid=stSidebarUserContent] button {position:relative;justify-content:flex-start;height:40px;min-height:40px;padding:0 14px;border:0;background:transparent;box-shadow:none;color:#5f636b;white-space:nowrap;filter:none;}
+[data-testid=stSidebarUserContent] button {position:relative;justify-content:flex-start;height:40px;min-height:40px;padding:0 14px;border:0;background:transparent;box-shadow:none;color:var(--muted);white-space:nowrap;filter:none;}
 [data-testid=stSidebarUserContent] button>div,[data-testid=stSidebarUserContent] button>div>span {display:flex;justify-content:flex-start;width:100%;gap:12px;}
 [data-testid=stSidebarUserContent] button [data-testid=stIconMaterial] {font-size:20px;min-width:20px;}
 [data-testid=stSidebarUserContent] button p {overflow:hidden;white-space:nowrap;}
 [data-testid=stSidebarUserContent] button:hover {color:var(--ink);background:transparent;border:0;filter:none;}
 [data-testid=stSidebarUserContent] button:active {color:var(--ink);background:transparent;filter:none;}
 [data-testid=stSidebarUserContent] button:focus {background:transparent;box-shadow:none;}
-[data-testid=stSidebarUserContent] button:focus-visible {outline:2px solid var(--accent);outline-offset:-2px;}
-[data-testid=stSidebarUserContent] button[kind=primary],[data-testid=stSidebarUserContent] button[kind=primary]:hover {color:var(--accent);}
+[data-testid=stSidebarUserContent] button:focus-visible {outline:2px solid var(--accent-ink);outline-offset:-2px;}
+[data-testid=stSidebarUserContent] button[kind=primary],[data-testid=stSidebarUserContent] button[kind=primary]:hover {color:var(--accent-ink);}
 [data-testid=stSidebarUserContent] button[kind=primary] p {font-weight:700;}
-[data-testid=stSidebarUserContent] button[kind=primary]::before {content:'';position:absolute;left:-8px;top:10px;bottom:10px;width:3px;border-radius:0 2px 2px 0;background:var(--accent);}
+[data-testid=stSidebarUserContent] button[kind=primary]::before {content:'';position:absolute;left:-8px;top:10px;bottom:10px;width:3px;border-radius:0 2px 2px 0;background:var(--accent-ink);}
 
 #claims-navigation {position:fixed;left:12px;top:20px;width:40px;height:40px;margin:0;opacity:0;z-index:1003;cursor:pointer;}
 .navigation-brand {position:fixed;left:12px;top:20px;height:40px;display:flex;align-items:center;gap:2px;z-index:1002;color:var(--ink);cursor:pointer;font:700 14px "Product Sans",Arial,sans-serif;}
@@ -97,7 +97,7 @@ button:focus-visible,input:focus-visible {outline:2px solid var(--accent);outlin
 #claims-navigation:not(:checked) + .navigation-brand .nav-chevron::before {content:'›';}
 #claims-navigation:hover + .navigation-brand .nav-shield,.navigation-brand:hover .nav-shield {display:none;}
 #claims-navigation:hover + .navigation-brand .nav-chevron,.navigation-brand:hover .nav-chevron {display:grid;}
-#claims-navigation:focus-visible + .navigation-brand {outline:2px solid var(--accent);outline-offset:0;border-radius:12px;}
+#claims-navigation:focus-visible + .navigation-brand {outline:2px solid var(--accent-ink);outline-offset:0;border-radius:12px;}
 [data-testid=stElementContainer]:has(#claims-navigation) {position:absolute;width:0;height:0;min-height:0;margin:0;padding:0;overflow:visible;}
 
 /* Collapsed: an icon rail, so every page stays one click away. */
@@ -123,11 +123,11 @@ button:focus-visible,input:focus-visible {outline:2px solid var(--accent);outlin
 
 /* Explanations: one quiet style, using the same tag treatment as the KPI cards. */
 [data-testid=stMarkdownContainer] li {font-size:13px;line-height:20px;margin-bottom:8px;}
-.page-intro {max-width:800px;font-size:14px;line-height:22px;color:#4f535a;}
-.explain {display:grid;grid-template-columns:96px minmax(0,1fr);gap:8px 12px;max-width:880px;font-size:13px;line-height:20px;color:#5f636b;}
-.explain-label {justify-self:start;align-self:start;font-size:12px;line-height:20px;white-space:nowrap;padding:0 8px;border-radius:4px;background:#eef2ff;color:#4a5db0;}
+.page-intro {max-width:800px;font-size:14px;line-height:22px;color:var(--ink-2);}
+.explain {display:grid;grid-template-columns:96px minmax(0,1fr);gap:8px 12px;max-width:880px;font-size:13px;line-height:20px;color:var(--muted);}
+.explain-label {justify-self:start;align-self:start;font-size:12px;line-height:20px;white-space:nowrap;padding:0 8px;border-radius:4px;background:var(--tag-bg);color:var(--tag-ink);}
 .explain b,.page-intro b,.glossary-term {color:var(--ink);font-weight:700;}
-.glossary {display:grid;grid-template-columns:140px minmax(0,1fr);gap:8px 16px;font-size:13px;line-height:20px;color:#5f636b;}
+.glossary {display:grid;grid-template-columns:140px minmax(0,1fr);gap:8px 16px;font-size:13px;line-height:20px;color:var(--muted);}
 @media(max-width:640px) {
   .explain,.glossary {grid-template-columns:minmax(0,1fr);gap:4px;}
   .explain-text,.glossary-text {margin-bottom:8px;}

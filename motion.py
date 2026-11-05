@@ -120,7 +120,7 @@ def _kpis():
 
 def _header():
     title = _stack(_bone(232, 18, 7), _bone(372, 11), gap=12)
-    actions = _bone(149, 36, 18) + _bone(134, 36, 18) + _bone(141, 36, 18)
+    actions = _bone(149, 36, 18) + _bone(134, 36, 18) + _bone(141, 36, 18) + _bone(36, 36, 18)
     return f'<div class="sk-header"><div>{title}</div><div class="sk-actions">{actions}</div></div>'
 
 
@@ -209,7 +209,13 @@ def page_skeletons_html(views):
 
 
 def motion_css():
-    return (HERE / "motion.css").read_text()
+    return (HERE / "theme.css").read_text() + (HERE / "motion.css").read_text()
+
+
+def theme_toggle_html():
+    """Handled in the browser by motion.js, so switching needs no rerun."""
+    return ('<button type="button" class="cs-theme-toggle" aria-pressed="false" aria-label="Switch to dark mode" title="Switch to dark mode">'
+            '<span class="cs-theme-icon cs-theme-moon"></span><span class="cs-theme-icon cs-theme-sun"></span></button>')
 
 
 def motion_script():

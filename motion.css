@@ -17,7 +17,6 @@ html.cs-hold .st-key-page_view {opacity:0!important;pointer-events:none;}
 .cs-sk-page.is-on {display:block;}
 
 /* ---------- Bones ---------- */
-.cs-boot,.cs-sk-layer {--bone:#eef0f3;--bone-glint:#f8f9fb;}
 .sk-bone {flex:none;max-width:100%;background-color:var(--bone);background-image:linear-gradient(100deg,var(--bone) 40%,var(--bone-glint) 50%,var(--bone) 60%);background-size:200vw 100%;background-attachment:fixed;animation:cs-shimmer 1.8s linear infinite;}
 @keyframes cs-shimmer {from {background-position:100vw 0;} to {background-position:-100vw 0;}}
 .sk-stack {display:flex;flex-direction:column;min-width:0;}
@@ -26,12 +25,12 @@ html.cs-hold .st-key-page_view {opacity:0!important;pointer-events:none;}
 .sk-intro {max-width:800px;}
 .sk-explain {display:grid;grid-template-columns:96px minmax(0,1fr);gap:8px 12px;max-width:880px;}
 .sk-control {display:flex;flex-direction:column;min-width:0;}
-.sk-card {background:#fff;border:1px solid var(--line);border-radius:12px;padding:15px;}
-.sk-table {box-sizing:border-box;overflow:hidden;background:#fff;border:1px solid var(--line);border-radius:8px;}
+.sk-card {background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:15px;}
+.sk-table {box-sizing:border-box;overflow:hidden;background:var(--surface);border:1px solid var(--line);border-radius:8px;}
 .sk-row {display:flex;box-sizing:border-box;border-bottom:1px solid var(--line);}
 .sk-cell {box-sizing:border-box;display:flex;align-items:center;min-width:0;padding:0 8px;border-right:1px solid var(--line);}
 .sk-cell:last-child {border-right:0;}
-.sk-chart {box-sizing:border-box;background:#fff;padding:12px 16px;overflow:hidden;}
+.sk-chart {box-sizing:border-box;background:var(--surface);padding:12px 16px;overflow:hidden;}
 .sk-hbars {display:flex;flex-direction:column;justify-content:space-around;gap:6px;}
 .sk-hbar {flex:1;min-height:0;max-height:32px;display:grid;grid-template-columns:18% minmax(0,1fr);gap:12px;align-items:center;}
 .sk-hbar>div:last-child {height:100%;}
@@ -41,12 +40,12 @@ html.cs-hold .st-key-page_view {opacity:0!important;pointer-events:none;}
 .sk-curves i {position:absolute;border-top:3px solid var(--bone);border-left:3px solid var(--bone);border-top-left-radius:100%;}
 .sk-matrix {display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:4px;padding:32px 20% 28px;}
 .sk-tabs {display:flex;gap:24px;align-items:center;height:40px;border-bottom:1px solid var(--line);}
-.sk-code {background:#f6f7f9;border-radius:12px;padding:16px;height:198px;box-sizing:border-box;}
+.sk-code {background:var(--surface-2);border-radius:12px;padding:16px;height:198px;box-sizing:border-box;}
 .sk-list {display:flex;flex-direction:column;justify-content:space-between;padding-left:24px;box-sizing:border-box;}
 
 /* ---------- Full-page first paint ---------- */
-.cs-boot {position:fixed;inset:0;z-index:1004;background:#fafafa;overflow:hidden;--boot-nav:240px;}
-.sk-side {position:absolute;top:0;left:0;bottom:0;width:var(--boot-nav);box-sizing:border-box;background:#fff;border-right:1px solid var(--line);}
+.cs-boot {position:fixed;inset:0;z-index:1004;background:var(--page);overflow:hidden;--boot-nav:240px;}
+.sk-side {position:absolute;top:0;left:0;bottom:0;width:var(--boot-nav);box-sizing:border-box;background:var(--surface);border-right:1px solid var(--line);}
 .sk-brand {position:absolute;left:22px;top:30px;display:flex;align-items:center;gap:12px;}
 .sk-nav {position:absolute;top:76px;left:8px;right:8px;display:flex;flex-direction:column;gap:4px;}
 .sk-nav-row {height:40px;display:flex;align-items:center;gap:12px;padding:0 14px;}
@@ -85,15 +84,14 @@ html.cs-ready [data-testid=stApp]:has(#cs-rendered) .cs-boot {animation:cs-boot-
 
 /* ---------- Liquid-glass navigation pill ---------- */
 html.cs-js [data-testid=stSidebarUserContent] {position:relative;}
-/* One glass, shared by the active nav item and Export claims. No rim: a hard shadow or
-   inner highlight at the edge reads as a stroke, so the only shadow is a wide, soft glow. */
-[data-testid=stApp] {--cs-glass-bg:radial-gradient(120% 100% at 28% 0%,#ffffffb8 0%,#fff0 62%),#365cff1a;--cs-glass-shadow:0 8px 24px #365cff24;--cs-glass-shadow-hover:0 10px 30px #365cff38;--cs-glass-blur:blur(10px) saturate(180%);}
+/* One glass (tokens in theme.css), shared by the active nav item and Export claims. No rim:
+   a hard shadow or inner highlight at the edge reads as a stroke, so only a soft glow remains. */
 .cs-pill {position:absolute;top:0;left:0;z-index:0;pointer-events:none;box-sizing:border-box;border-radius:999px;transform-origin:50% 50%;will-change:transform;
   background:var(--cs-glass-bg);-webkit-backdrop-filter:var(--cs-glass-blur);backdrop-filter:var(--cs-glass-blur);box-shadow:var(--cs-glass-shadow);}
 html.cs-js [data-testid=stSidebarUserContent] [data-testid=stElementContainer] {position:relative;z-index:1;}
 html.cs-js [data-testid=stSidebarUserContent] button[kind=primary]::before {display:none;}
 html.cs-js [data-testid=stSidebarUserContent] button,
-html.cs-js [data-testid=stSidebarUserContent] button[kind=primary] {color:#5f636b!important;transition:color .22s ease,transform .5s var(--cs-spring,cubic-bezier(.34,1.4,.64,1));}
+html.cs-js [data-testid=stSidebarUserContent] button[kind=primary] {color:var(--muted)!important;transition:color .22s ease,transform .5s var(--cs-spring,cubic-bezier(.34,1.4,.64,1));}
 html.cs-js [data-testid=stSidebarUserContent] button:hover {color:var(--ink)!important;}
 html.cs-js [data-testid=stSidebarUserContent] button p,
 html.cs-js [data-testid=stSidebarUserContent] button[kind=primary] p {font-weight:400!important;}
@@ -107,11 +105,11 @@ html.cs-js [data-testid=stSidebarUserContent] button[kind=primary] p {font-weigh
 [data-testid=stApp] button,[data-testid=stApp] button:hover,[data-testid=stApp] button:focus,[data-testid=stApp] button:active,
 [role=dialog] button,[data-testid=stPopoverBody] button {border:0!important;}
 .st-key-header_actions [data-testid=stPopover] button,.st-key-header_actions [data-testid=stButton] button,
-[data-testid=stMain] .st-key-page_view [data-testid=stDownloadButton] button,[data-testid=stPopoverBody] [data-testid=stDownloadButton] button {background:#fff!important;box-shadow:0 6px 18px #2c344814;}
+[data-testid=stMain] .st-key-page_view [data-testid=stDownloadButton] button,[data-testid=stPopoverBody] [data-testid=stDownloadButton] button {background:var(--surface)!important;box-shadow:var(--lift);}
 .st-key-header_actions [data-testid=stPopover] button:hover,.st-key-header_actions [data-testid=stButton] button:hover,
-[data-testid=stMain] .st-key-page_view [data-testid=stDownloadButton] button:hover,[data-testid=stPopoverBody] [data-testid=stDownloadButton] button:hover {filter:none;box-shadow:0 8px 24px #2c344824;}
+[data-testid=stMain] .st-key-page_view [data-testid=stDownloadButton] button:hover,[data-testid=stPopoverBody] [data-testid=stDownloadButton] button:hover {filter:none;box-shadow:var(--lift-hover);}
 
 /* ---------- Export claims: the same glass as the active navigation item ---------- */
-.st-key-header_actions [data-testid=stDownloadButton] button {color:var(--accent)!important;background:var(--cs-glass-bg)!important;-webkit-backdrop-filter:var(--cs-glass-blur);backdrop-filter:var(--cs-glass-blur);box-shadow:var(--cs-glass-shadow)!important;}
+.st-key-header_actions [data-testid=stDownloadButton] button {color:var(--accent-ink)!important;background:var(--cs-glass-bg)!important;-webkit-backdrop-filter:var(--cs-glass-blur);backdrop-filter:var(--cs-glass-blur);box-shadow:var(--cs-glass-shadow)!important;}
 .st-key-header_actions [data-testid=stDownloadButton] button p {color:inherit!important;font-weight:700!important;}
 .st-key-header_actions [data-testid=stDownloadButton] button:hover {filter:none;box-shadow:var(--cs-glass-shadow-hover)!important;}

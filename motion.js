@@ -30,6 +30,54 @@
   const SPRING = supportsLinear ? springEasing(0.52, 1.75, 0.95) : "cubic-bezier(.34,1.4,.64,1)";
   root.style.setProperty("--cs-spring", SPRING);
 
+  // ---------- Theme: decided first, so the skeleton already has the right colours ----------
+  const THEME_KEY = "cs-theme";
+  function storedTheme() {
+    try { return localStorage.getItem(THEME_KEY); } catch (error) { return null; }
+  }
+  function syncToggle() {
+    const dark = root.classList.contains("cs-dark");
+    document.querySelectorAll(".cs-theme-toggle").forEach((button) => {
+      button.setAttribute("aria-pressed", String(dark));
+      button.setAttribute("aria-label", dark ? "Switch to light mode" : "Switch to dark mode");
+      button.title = dark ? "Switch to light mode" : "Switch to dark mode";
+    });
+  }
+  function applyTheme(dark) {
+    root.classList.toggle("cs-dark", dark);
+    syncToggle();
+  }
+  // First-time visitors start in dark. After that, their own choice is remembered.
+  applyTheme(storedTheme() ? storedTheme() === "dark" : true);
+
+  function switchTheme(button) {
+    const dark = !root.classList.contains("cs-dark");
+    try { localStorage.setItem(THEME_KEY, dark ? "dark" : "light"); } catch (error) { /* Lasts this page only. */ }
+    if (reduced()) { applyTheme(dark); return; }
+    if (!document.startViewTransition) {
+      root.classList.add("cs-theming");
+      applyTheme(dark);
+      setTimeout(() => root.classList.remove("cs-theming"), 450);
+      return;
+    }
+    // Everything changes in one step, including canvas tables and charts, revealed from the button.
+    const box = button.getBoundingClientRect();
+    const x = box.left + box.width / 2;
+    const y = box.top + box.height / 2;
+    const radius = Math.hypot(Math.max(x, innerWidth - x), Math.max(y, innerHeight - y));
+    const transition = document.startViewTransition(() => applyTheme(dark));
+    transition.ready.then(() => {
+      root.animate(
+        { clipPath: ["circle(0px at " + x + "px " + y + "px)", "circle(" + radius + "px at " + x + "px " + y + "px)"] },
+        { duration: 620, easing: "cubic-bezier(.22,1,.36,1)", pseudoElement: "::view-transition-new(root)" }
+      );
+    }, () => {});
+  }
+  document.addEventListener("click", (event) => {
+    const button = event.target.closest && event.target.closest(".cs-theme-toggle");
+    if (button) switchTheme(button);
+  });
+
   const page = () => $(".st-key-page_view");
   const marker = () => $("#cs-rendered");
   const navButtons = () => Array.from(document.querySelectorAll('[data-testid="stSidebarUserContent"] [class*="st-key-nav_"]'));
@@ -53,7 +101,7 @@
       document.head.appendChild(style);
     }
     const key = 'html.cs-js [data-testid="stSidebarUserContent"] .st-key-nav_' + CSS.escape(slug);
-    style.textContent = key + " button[kind]{color:var(--accent)!important}" + key + " button[kind] p{font-weight:700!important}";
+    style.textContent = key + " button[kind]{color:var(--accent-ink)!important}" + key + " button[kind] p{font-weight:700!important}";
   }
 
   function targetRect(slug) {
@@ -324,6 +372,7 @@
   let queued = false;
   function syncPill() {
     queued = false;
+    syncToggle();
     const slug = pending ? pending.slug : currentSlug();
     if (!root.classList.contains("cs-ready")) return;
     if (slug !== activeSlug) paintActive(slug);
