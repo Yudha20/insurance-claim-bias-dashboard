@@ -72,7 +72,7 @@ button:focus-visible,input:focus-visible {outline:2px solid var(--accent);outlin
 .st-key-toggle_rail button:hover [data-testid=stIconMaterial] {font-size:0!important;}
 .st-key-toggle_rail button:hover [data-testid=stIconMaterial]::after {content:'›';font-family:"Product Sans",sans-serif;font-size:24px;line-height:20px;}
 [data-testid=stMain], [data-testid=stMainBlockContainer], [data-testid=stColumn] {min-width:0;}
-[data-testid=stDataFrame] {contain:inline-size;max-width:100%;}
+[data-testid=stDataFrame] {max-width:100%;overflow:hidden;}
 [data-testid=stToast] {font-family:"Product Sans",sans-serif;font-size:13px;border-radius:12px;}
 /* Current Streamlit combobox: only the enclosing group owns a border. */
 .react-aria-ComboBox [role=group] {border:1px solid #e1e3e8!important;border-radius:12px!important;box-shadow:none!important;background:#fff;}
