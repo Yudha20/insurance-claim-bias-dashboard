@@ -5,20 +5,6 @@ html,body,[data-testid=stApp] {font-family:"Product Sans",Arial,sans-serif;color
 [data-testid=stMainBlockContainer] {padding:24px 24px 32px;max-width:1600px;}
 [data-testid=stElementContainer]:has(style) {display:none;}
 [data-testid=stVerticalBlock] {gap:16px;}
-[data-testid=stSidebar] {background:white;border-right:1px solid var(--line);transition:none;overflow:hidden;}
-[data-testid=stSidebarHeader],[data-testid=stSidebarCollapsedControl] {display:none;}
-[data-testid=stSidebarContent] {padding:0!important;}
-[data-testid=stSidebarUserContent] {padding:20px 8px 12px!important;}
-[data-testid=stSidebarUserContent]>div {padding:0!important;}
-[data-testid=stSidebar] [data-testid=stVerticalBlock] {gap:4px!important;padding:0!important;}
-[data-testid=stSidebar] button {justify-content:flex-start;min-height:36px;height:36px;padding:8px 12px;border:0;background:transparent;box-shadow:none;white-space:nowrap;}
-[data-testid=stSidebar] button>div,[data-testid=stSidebar] button>div>span {display:flex;justify-content:flex-start;width:100%;gap:12px;}
-[data-testid=stSidebar] button [data-testid=stIconMaterial] {font-size:20px;min-width:20px;}
-[data-testid=stSidebar] button p {font-size:13px;}
-[data-testid=stSidebar] button[kind=primary] {background:transparent;color:var(--accent);}
-[data-testid=stSidebar] button:hover {color:#34373c!important;background:transparent;border:0;}
-.st-key-toggle_rail {margin-bottom:12px;}
-.st-key-toggle_rail button {height:40px;color:#45484e;}
 h1,h2,h3,.page-title {color:var(--ink);font-weight:500;letter-spacing:-.4px;}
 h1 {font-size:28px;} h2 {font-size:20px;} h3 {font-size:18px;}
 p,label,input,button {font-size:13px;}
@@ -54,11 +40,9 @@ button:focus-visible,input:focus-visible {outline:2px solid var(--accent);outlin
 [data-testid=stApp] :is(p,label,input,button,textarea,h1,h2,h3,h4),[data-testid=stCaptionContainer] {font-family:"Product Sans",Arial,sans-serif!important;}
 [data-testid=stMainBlockContainer]>[data-testid=stVerticalBlock] {gap:24px!important;}
 [data-testid=stMainBlockContainer] [data-testid=stLayoutWrapper]:has(.kpi) {margin-top:8px;}
-[data-testid=stSidebar] button p {overflow:hidden;white-space:nowrap;}
 .kpi {padding:24px;}
 .kpi-label {margin-bottom:12px;}
 [data-testid=stDialog] [role=dialog],[data-testid=stPopoverBody] {border-radius:12px!important;}
-@media(prefers-reduced-motion:reduce) {[data-testid=stSidebar] {transition:none!important;}}
 
 /* Controls have one perimeter; nested dropdown arrows are not separate buttons. */
 [data-baseweb=select] button {min-height:0!important;border:0!important;outline:none!important;box-shadow:none!important;background:transparent!important;border-radius:0!important;filter:none!important;}
@@ -67,10 +51,6 @@ button:focus-visible,input:focus-visible {outline:2px solid var(--accent);outlin
 [data-testid=stTextInput] input {outline:none!important;box-shadow:none!important;border:0!important;}
 [data-testid=stTextInput]>div>div {border:1px solid #e1e3e8;box-shadow:none!important;}
 [data-testid=stTextInput]:focus-within>div>div {border-color:#365cff;}
-[data-testid=stSidebar] button {color:#92969d;}
-[data-testid=stSidebar] button[kind=primary] {color:#365cff;}
-.st-key-toggle_rail button:hover [data-testid=stIconMaterial] {color:transparent;position:relative;}
-.st-key-toggle_rail button:hover [data-testid=stIconMaterial]::after {position:absolute;inset:0;color:#34373c;content:'›';font-family:"Product Sans",sans-serif;font-size:24px;line-height:20px;}
 [data-testid=stMain], [data-testid=stMainBlockContainer], [data-testid=stColumn] {min-width:0;}
 [data-testid=stDataFrame] {max-width:100%;overflow:hidden;}
 [data-testid=stToast] {font-family:"Product Sans",sans-serif;font-size:13px;border-radius:12px;}
@@ -84,32 +64,59 @@ button:focus-visible,input:focus-visible {outline:2px solid var(--accent);outlin
 [data-testid=stApp] :is(p,label,input,textarea,button,small,code,pre),[data-testid=stCaptionContainer],[role=option] {font-size:max(12px,.8125rem)!important;}
 [data-testid=stApp] small,[data-testid=stCaptionContainer] p {font-size:12px!important;}
 
-@media(max-width:900px) {[data-testid=stSidebarUserContent] {padding-top:20px!important;}}
+/* Navigation. Everything is CSS-driven: the checkbox toggles width in the browser, with no rerun.
+   Icons sit in one 64px column, so they stay put when the sidebar collapses to a rail. */
+[data-testid=stApp] {--nav-width:240px;}
+[data-testid=stSidebar] {position:fixed!important;top:0;left:0;bottom:0;width:var(--nav-width)!important;min-width:var(--nav-width)!important;max-width:var(--nav-width)!important;z-index:100;transform:none!important;transition:none!important;background:#fff;border-right:1px solid var(--line);overflow:hidden;box-shadow:none;}
+[data-testid=stSidebarHeader],[data-testid=stSidebarCollapsedControl] {display:none;}
+[data-testid=stSidebarContent] {padding:0!important;overflow-x:hidden;}
+[data-testid=stSidebarUserContent] {padding:76px 8px 12px!important;}
+[data-testid=stSidebarUserContent]>div {padding:0!important;}
+[data-testid=stSidebar] [data-testid=stVerticalBlock] {gap:4px!important;padding:0!important;}
+[data-testid=stMain] {margin-left:var(--nav-width);width:calc(100% - var(--nav-width));transition:none;}
 
-/* The collapsed control lives in the header, never inside a zero-width sidebar. */
-.st-key-toggle_rail button {width:40px;min-width:40px;padding:8px!important;background:transparent;border:0;box-shadow:none;}
-[data-testid=stSidebar] .st-key-toggle_rail button {width:100%;}
-.st-key-toggle_rail {margin-bottom:0;}
-[data-testid=stSidebar] .st-key-toggle_rail {margin-bottom:12px;}
-.st-key-toggle_rail button:hover {background:#f0f1f3;border:0;}
+[data-testid=stSidebarUserContent] button {position:relative;justify-content:flex-start;height:40px;min-height:40px;padding:0 14px;border:0;background:transparent;box-shadow:none;color:#5f636b;white-space:nowrap;filter:none;}
+[data-testid=stSidebarUserContent] button>div,[data-testid=stSidebarUserContent] button>div>span {display:flex;justify-content:flex-start;width:100%;gap:12px;}
+[data-testid=stSidebarUserContent] button [data-testid=stIconMaterial] {font-size:20px;min-width:20px;}
+[data-testid=stSidebarUserContent] button p {overflow:hidden;white-space:nowrap;}
+[data-testid=stSidebarUserContent] button:hover {color:var(--ink);background:transparent;border:0;filter:none;}
+[data-testid=stSidebarUserContent] button:active {color:var(--ink);background:transparent;filter:none;}
+[data-testid=stSidebarUserContent] button:focus {background:transparent;box-shadow:none;}
+[data-testid=stSidebarUserContent] button:focus-visible {outline:2px solid var(--accent);outline-offset:-2px;}
+[data-testid=stSidebarUserContent] button[kind=primary],[data-testid=stSidebarUserContent] button[kind=primary]:hover {color:var(--accent);}
+[data-testid=stSidebarUserContent] button[kind=primary] p {font-weight:700;}
+[data-testid=stSidebarUserContent] button[kind=primary]::before {content:'';position:absolute;left:-8px;top:10px;bottom:10px;width:3px;border-radius:0 2px 2px 0;background:var(--accent);}
 
-.st-key-toggle_rail [data-testid=stIconMaterial] {font-size:20px!important;min-width:20px;line-height:20px;}
-
-/* Browser-only navigation: the switch and brand never move or rerun the app. */
-[data-testid=stSidebar] {position:fixed!important;top:0;left:0;bottom:0;width:240px!important;min-width:240px!important;max-width:240px!important;z-index:100;transform:none!important;transition:none!important;}
-[data-testid=stSidebarUserContent] {padding-top:76px!important;}
-[data-testid=stMain] {margin-left:240px;width:calc(100% - 240px);transition:none;}
-#claims-navigation {position:fixed;left:16px;top:20px;width:40px;height:40px;margin:0;opacity:0;z-index:1003;cursor:pointer;}
-.navigation-brand {position:fixed;left:16px;top:20px;height:40px;display:flex;align-items:center;gap:12px;z-index:1002;color:#737780;cursor:pointer;font:13px "Product Sans",sans-serif;}
-.nav-shield,.nav-chevron {display:grid;place-items:center;width:40px;height:40px;font-size:24px;}
-.nav-chevron {display:none;}
-#claims-navigation:hover + .navigation-brand .nav-shield {display:none;}
-#claims-navigation:hover + .navigation-brand .nav-chevron {display:grid;}
-#claims-navigation:focus-visible + .navigation-brand {outline:2px solid #365cff;outline-offset:4px;border-radius:12px;}
-[data-testid=stApp]:has(#claims-navigation:not(:checked)) [data-testid=stSidebar] {visibility:hidden;pointer-events:none;}
-[data-testid=stApp]:has(#claims-navigation:not(:checked)) [data-testid=stMain] {margin-left:0;width:100%;}
-[data-testid=stApp]:has(#claims-navigation:not(:checked)) .nav-brand-name {display:none;}
-[data-testid=stApp]:has(#claims-navigation:not(:checked)) .page-title,
-[data-testid=stApp]:has(#claims-navigation:not(:checked)) .page-subtitle {padding-left:48px;}
-[data-testid=stElementContainer]:has(#claims-navigation) {height:0;min-height:0;margin:0;}
+#claims-navigation {position:fixed;left:12px;top:20px;width:40px;height:40px;margin:0;opacity:0;z-index:1003;cursor:pointer;}
+.navigation-brand {position:fixed;left:12px;top:20px;height:40px;display:flex;align-items:center;gap:2px;z-index:1002;color:var(--ink);cursor:pointer;font:700 14px "Product Sans",Arial,sans-serif;}
+.nav-shield,.nav-chevron {display:grid;place-items:center;width:40px;height:40px;}
+/* st.html strips inline SVG, so the shield is a CSS mask. */
+.nav-shield::before {content:'';width:20px;height:20px;background:currentColor;-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.8' stroke-linejoin='round'%3E%3Cpath d='M12 3 4 6v6c0 5 8 9 8 9s8-4 8-9V6l-8-3Z'/%3E%3C/svg%3E") center/contain no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.8' stroke-linejoin='round'%3E%3Cpath d='M12 3 4 6v6c0 5 8 9 8 9s8-4 8-9V6l-8-3Z'/%3E%3C/svg%3E") center/contain no-repeat;}
+.nav-chevron {display:none;font-size:24px;line-height:1;font-weight:400;}
+.nav-chevron::before {content:'‹';}
+#claims-navigation:not(:checked) + .navigation-brand .nav-chevron::before {content:'›';}
+#claims-navigation:hover + .navigation-brand .nav-shield,.navigation-brand:hover .nav-shield {display:none;}
+#claims-navigation:hover + .navigation-brand .nav-chevron,.navigation-brand:hover .nav-chevron {display:grid;}
+#claims-navigation:focus-visible + .navigation-brand {outline:2px solid var(--accent);outline-offset:0;border-radius:12px;}
 [data-testid=stElementContainer]:has(#claims-navigation) {position:absolute;width:0;height:0;min-height:0;margin:0;padding:0;overflow:visible;}
+
+/* Collapsed: an icon rail, so every page stays one click away. */
+@media(min-width:901px) {
+  [data-testid=stApp]:has(#claims-navigation:not(:checked)) {--nav-width:64px;}
+  [data-testid=stApp]:has(#claims-navigation:not(:checked)) .nav-brand-name,
+  [data-testid=stApp]:has(#claims-navigation:not(:checked)) [data-testid=stSidebarUserContent] button p {position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);}
+}
+
+/* Small screens: a scrolling top strip with labels, so navigation never squeezes the page. */
+@media(max-width:900px) {
+  #claims-navigation,.navigation-brand {display:none;}
+  [data-testid=stSidebar] {right:0;bottom:auto;width:100%!important;min-width:100%!important;max-width:100%!important;height:56px;border-right:0;border-bottom:1px solid var(--line);}
+  [data-testid=stSidebarContent] {height:56px;overflow:auto hidden;scrollbar-width:none;}
+  [data-testid=stSidebarUserContent] {padding:8px!important;width:max-content;}
+  [data-testid=stSidebar] [data-testid=stVerticalBlock] {flex-direction:row!important;flex-wrap:nowrap;width:max-content!important;}
+  [data-testid=stSidebar] [data-testid=stElementContainer],[data-testid=stSidebar] [data-testid=stButton] {width:auto!important;}
+  [data-testid=stSidebarUserContent] button {width:auto;}
+  [data-testid=stSidebarUserContent] button[kind=primary]::before {left:14px;right:14px;top:auto;bottom:-8px;width:auto;height:3px;border-radius:2px 2px 0 0;}
+  [data-testid=stMain] {margin-left:0;width:100%;}
+  [data-testid=stMainBlockContainer] {padding-top:80px;}
+}

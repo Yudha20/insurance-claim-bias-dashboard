@@ -220,7 +220,7 @@ if st.session_state.pop("settings_saved", False):
 
 if "active_view" not in st.session_state: st.session_state.active_view = "Claims"
 # Native checkbox changes layout immediately in the browser; no Python rerun.
-st.html('<input type="checkbox" id="claims-navigation" checked aria-label="Show navigation" role="switch">\n<label for="claims-navigation" class="navigation-brand"><span class="nav-shield"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3 4 6v6c0 5 8 9 8 9s8-4 8-9V6l-8-3Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg></span><span class="nav-chevron">›</span><span class="nav-brand-name">ClaimScope</span></label>')
+st.html('<input type="checkbox" id="claims-navigation" checked aria-label="Show navigation" role="switch">\n<label for="claims-navigation" class="navigation-brand"><span class="nav-shield"></span><span class="nav-chevron"></span><span class="nav-brand-name">ClaimScope</span></label>')
 nav = [("Claims", "table_view", "Search, filter, and export claim records"),
        ("Overview", "space_dashboard", "Compare outcomes across policyholder groups"),
        ("Disparities", "query_stats", "Explore differences and income distribution"),
