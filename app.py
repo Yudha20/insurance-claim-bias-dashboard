@@ -292,12 +292,39 @@ st.markdown("""<style>
 [data-testid="stMainBlockContainer"] {padding-top:64px!important;}
 .kpi {margin-bottom:16px;}
 </style>""", unsafe_allow_html=True)
+st.markdown("""<style>
+:root {--space:4px;--radius:8px;}
+[data-testid="stSidebarUserContent"] {padding:12px 8px!important;overflow:hidden;}
+[data-testid="stSidebar"] [data-testid="stVerticalBlock"] {gap:4px!important;}
+[data-testid="stSidebar"] button {height:32px!important;min-height:32px!important;padding:4px 12px!important;gap:12px!important;border-radius:8px!important;white-space:nowrap;}
+[data-testid="stSidebar"] button p {font-size:13px!important;white-space:nowrap;}
+[data-testid="stSidebar"] [data-testid="stIconMaterial"] {font-size:20px!important;min-width:20px;}
+.st-key-toggle_rail {margin-bottom:8px!important;}
+.st-key-toggle_rail button {height:40px!important;min-height:40px!important;}
+.st-key-toggle_rail button [data-testid="stIconMaterial"] {min-width:24px!important;width:24px!important;height:24px!important;padding:0!important;border-radius:8px!important;background:transparent!important;color:#484b52!important;}
+.st-key-toggle_rail button:hover [data-testid="stIconMaterial"] {font-size:0!important;}
+.st-key-toggle_rail button:hover [data-testid="stIconMaterial"]::after {font-size:24px!important;}
+[data-testid="stSidebar"] [data-testid="stCaptionContainer"] {padding:8px 12px;}
+[data-testid="stSidebar"] [data-testid="stPopoverButton"] {margin-top:8px;}
+[data-testid="stMainBlockContainer"] {padding:64px 24px 32px!important;}
+[data-testid="stMainBlockContainer"] [data-testid="stVerticalBlock"] {gap:16px!important;}
+.kpi {margin:0!important;min-height:144px!important;padding:20px!important;border-radius:8px!important;}
+.kpi-label {margin-bottom:12px!important;}
+.kpi-note {margin-top:8px!important;}
+[data-testid="stVerticalBlockBorderWrapper"]>div {border-radius:8px!important;padding:20px!important;background:#fff!important;}
+[data-testid="stMainBlockContainer"] button {min-height:36px!important;height:36px!important;padding:4px 12px!important;white-space:nowrap;}
+button,input,[data-baseweb="select"]>div,[data-testid="stExpander"],[data-testid="stDataFrame"],[data-testid="stAlert"],[data-testid="stPopoverBody"] {border-radius:8px!important;}
+[data-testid="stPopoverBody"] {min-width:320px;max-width:min(400px,calc(100vw - 32px));}
+[data-testid="stPopoverBody"] [data-testid="stVerticalBlock"] {gap:12px!important;}
+@media(max-width:768px) {[data-testid="stMainBlockContainer"] {padding:64px 16px 24px!important;} [data-testid="stSidebar"]:hover {box-shadow:none!important;}}
+</style>""", unsafe_allow_html=True)
 # A persistent rail uses the same navigation controls in both sizes.
 if "rail_compact" not in st.session_state: st.session_state.rail_compact = True
 if "active_view" not in st.session_state: st.session_state.active_view = "Claims"
 compact = st.session_state.rail_compact
-st.markdown(f"<style>[data-testid='stSidebar'] {{width:{80 if compact else 248}px!important;min-width:{80 if compact else 248}px!important;}} </style>", unsafe_allow_html=True)
-if st.sidebar.button("" if compact else "ClaimScope", icon=":material/shield:", help="Expand navigation" if compact else "Collapse navigation", key="toggle_rail", width="stretch"):
+rail_width = 64 if compact else 240
+st.markdown("<style>[data-testid=stSidebar] {width:%dpx!important;min-width:%dpx!important;max-width:%dpx!important;}" % (rail_width, rail_width, rail_width) + ('[data-testid="stSidebar"]:hover,[data-testid="stSidebar"]:focus-within {width:240px!important;min-width:240px!important;max-width:240px!important;margin-right:-176px;z-index:1000;box-shadow:4px 0 16px #34373c0d;}\n[data-testid="stSidebar"]:not(:hover):not(:focus-within) button p {display:none;}\n[data-testid="stSidebar"]:not(:hover):not(:focus-within) [data-testid="stPopoverButton"]>svg {display:none;}' if compact else "") + "</style>", unsafe_allow_html=True)
+if st.sidebar.button("ClaimScope", icon=":material/shield:", help="Pin navigation open" if compact else "Unpin navigation", key="toggle_rail", width="stretch"):
     st.session_state.rail_compact = not compact
     st.rerun()
 nav = [("Claims", "table_view", "Search, filter, and export claim records"),
@@ -308,16 +335,16 @@ nav = [("Claims", "table_view", "Search, filter, and export claim records"),
        ("Evaluation", "monitoring", "Inspect ROC curves and prediction errors"),
        ("Findings", "description", "Review dataset findings and audit next steps")]
 for name, icon, detail in nav:
-    if st.sidebar.button("" if compact else name, icon=f":material/{icon}:", help=f"{name} — {detail}", key="nav_" + name,
+    if st.sidebar.button(name, icon=f":material/{icon}:", help=f"{name} — {detail}", key="nav_" + name,
                          type="primary" if st.session_state.active_view == name else "secondary", width="stretch"):
         st.session_state.active_view = name
         st.rerun()
 view = st.session_state.active_view
-head, upload_action, export_action = st.columns([3, 1, 1], vertical_alignment="center")
+head, upload_action, export_action = st.columns([6, 1.15, 1.15], gap="small", vertical_alignment="center")
 with head:
     st.markdown('<div class="page-title">Insurance claims dashboard</div><div class="page-subtitle">Review outcomes, explore disparities, and evaluate predictive models.</div>', unsafe_allow_html=True)
 with upload_action:
-    with st.popover("Upload claims", icon=":material/upload_file:", width="stretch"):
+    with st.popover("Upload claims", icon=":material/upload_file:", width="content"):
         up = st.file_uploader("Upload claims CSV", type=["csv"], help="Use the 14-column sample schema. Maximum 10 MB.")
         st.download_button("Download CSV template", Path(__file__).with_name("Insurance.csv").read_text().splitlines()[0] + "\n", "claims_template.csv", "text/csv", width="stretch")
 file_bytes = up.getvalue() if up is not None else None
@@ -330,18 +357,27 @@ except (ValueError, OSError, UnicodeError, pd.errors.ParserError) as exc:
     st.error(str(exc))
     st.info("Open Upload claims above. Replace the CSV, or remove it to return to the bundled sample.")
     st.stop()
-with st.sidebar.popover("" if compact else "Model settings", icon=":material/settings:", help="Model settings — split, seed, and category limits", width="stretch"):
-    test_size = st.slider("Test split", 0.15, 0.40, 0.25, 0.05)
-    seed = st.number_input("Random seed", value=42, min_value=0, max_value=4294967295, step=1)
-    zone_top = st.slider("Teams to retain", 5, 30, 15)
-    state_top = st.slider("States to retain", 5, 30, 15)
-    occ_top = st.slider("Occupations to retain", 5, 25, 12)
-    reason_top = st.slider("Claim reasons to retain", 5, 25, 12)
+with st.sidebar.popover("Model settings", icon=":material/settings:", help="Configure training and feature preparation", width="stretch"):
+    st.subheader("Model settings")
+    st.caption("Changes apply when you save. Models use the complete loaded dataset.")
+    with st.form("model_configuration", border=False):
+        st.markdown("**Training**")
+        test_size = st.slider("Holdout for evaluation", 0.15, 0.40, 0.25, 0.05, format="%.2f", help="Fraction reserved for testing; remaining claims train the models.")
+        seed = st.number_input("Reproducibility seed", value=42, min_value=0, max_value=4294967295, step=1)
+        st.markdown("**Category limits**")
+        st.caption("Keep the most frequent categories; combine the rest as Other.")
+        left, right = st.columns(2)
+        zone_top = left.number_input("Teams", min_value=5, max_value=30, value=15, step=1)
+        state_top = right.number_input("States", min_value=5, max_value=30, value=15, step=1)
+        occ_top = left.number_input("Occupations", min_value=5, max_value=25, value=12, step=1)
+        reason_top = right.number_input("Claim reasons", min_value=5, max_value=25, value=12, step=1)
+        saved = st.form_submit_button("Apply settings", type="primary", icon=":material/check:")
+    if saved: st.success("Settings applied.")
 if not compact:
     st.sidebar.caption("Yudha’s workspace · ClaimScope")
     st.sidebar.caption("Disparities are audit leads, not proof of bias.")
 with export_action:
-    st.download_button("Export claims", df.to_csv(index=False).encode(), "claims.csv", "text/csv", type="primary", icon=":material/download:", width="stretch")
+    st.download_button("Export claims", df.to_csv(index=False).encode(), "claims.csv", "text/csv", type="primary", icon=":material/download:", width="content")
 overall = df["REPUDIATED"].mean()
 for i, (col, label, value, tag, note) in enumerate(zip(st.columns(4),
     ["Total claims", "Approved claims", "Repudiated claims", "Income recorded"],
