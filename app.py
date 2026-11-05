@@ -92,6 +92,42 @@ button:disabled {opacity:.45;cursor:not-allowed!important;}
 @media(prefers-reduced-motion:reduce) {*,*::before,*::after {animation:none!important;transition:none!important;scroll-behavior:auto!important;}}
 @media(max-width:768px) {[data-testid="stMainBlockContainer"] {padding:72px 16px 32px;} .kpi {padding:16px;min-height:128px;} .kpi-value {font-size:28px;} .page-title {font-size:20px;} }
 </style>""", unsafe_allow_html=True)
+st.markdown("""<style>
+:root {--ink:#34373c;--muted:#75787f;--line:#ececef;--accent:#365cff;}
+html,body,[data-testid="stApp"] {color:#34373c;font-family:Arial,Helvetica,sans-serif;}
+[data-testid="stAppViewContainer"] {background:#fafafa;}
+[data-testid="stHeader"] {background:#fff;border-bottom:1px solid #ededf0;}
+[data-testid="stMainBlockContainer"] {padding:88px 24px 40px;}
+[data-testid="stVerticalBlock"] {gap:16px;}
+[data-testid="stSidebarUserContent"] {padding:16px 12px!important;}
+[data-testid="stSidebarHeader"], [data-testid="stSidebarCollapsedControl"] {display:none!important;}
+[data-testid="stSidebar"] {transition:width .2s ease,min-width .2s ease;}
+[data-testid="stSidebar"] [data-testid="stVerticalBlock"] {gap:8px;}
+.rail-brand {display:flex;align-items:center;gap:12px;height:48px;margin:0 4px 16px;font-size:20px;font-weight:600;color:#373a40;white-space:nowrap;}
+.brand-mark {width:40px;height:40px;flex-shrink:0;background:#34373c;border-radius:50%;font-weight:400;}
+[data-testid="stSidebar"] button {min-height:40px;border:0!important;border-radius:8px;box-shadow:none!important;justify-content:flex-start;padding:8px 12px;color:#73767d;background:transparent;}
+[data-testid="stSidebar"] button[kind="primary"] {background:#f0f3ff;color:#365cff;}
+[data-testid="stSidebar"] button:hover {background:#f4f5f9;color:#365cff;}
+[data-testid="stSidebar"] button:active {background:#e5eaff;transform:scale(.97);}
+h1,h2,h3,.page-title {color:#34373c!important;font-weight:500!important;letter-spacing:-.4px!important;}
+.page-title {font-size:20px;line-height:28px;}
+.page-subtitle {font-size:12px;color:#82858c;}
+h2 {font-size:20px!important;} h3 {font-size:18px!important;}
+p,label {font-size:13px!important;}
+[data-testid="stCaptionContainer"] {color:#85888f;font-size:12px;}
+.kpi {border:1px solid #eaeaec;border-radius:16px;padding:24px 20px;box-shadow:0 1px 2px #24272e04;min-height:160px;}
+.kpi-value {color:#34373c;font-size:32px;font-weight:500;letter-spacing:-1px;line-height:40px;}
+.kpi-label {font-size:13px;color:#74777e;margin-bottom:16px;}
+.kpi-note {font-size:12px;color:#92959b;margin-top:8px;}
+.kpi-tag {background:#eef2ff;color:#5b6fbc;line-height:20px;}
+[data-testid="stButton"] button,[data-testid="stDownloadButton"] button,[data-testid="stPopover"] button {font-size:13px;border-radius:8px;min-height:40px;}
+button:active {transform:translateY(1px);filter:brightness(.96);}
+input,[data-baseweb="select"]>div {border-radius:8px!important;}
+[data-testid="stDataFrame"] {background:white;border-color:#eeeef0;border-radius:12px;}
+[data-testid="stVerticalBlockBorderWrapper"]>div {border-color:#eeeef0!important;border-radius:20px!important;background:#fff;}
+@media(max-width:768px) {[data-testid="stMainBlockContainer"] {padding:80px 16px 32px;} [data-testid="stSidebar"] {min-width:80px!important;} .kpi {padding:16px;}}
+@media(prefers-reduced-motion:reduce) {*,*::before,*::after {transition:none!important;animation:none!important;}}
+</style>""", unsafe_allow_html=True)
 plt.rcParams.update({"axes.spines.top":False,"axes.spines.right":False,
                      "axes.edgecolor":"#E8EBF0","grid.color":"#E8EBF0",
                      "text.color":"#20232B","axes.labelcolor":"#667085",
@@ -236,11 +272,32 @@ def cramers_v(df, col, target="REPUDIATED"):
 # ----------------------------------------------------------------------------
 # Sidebar
 # ----------------------------------------------------------------------------
-st.sidebar.markdown('<div class="brand"><span class="brand-mark">◈</span>ClaimScope</div>', unsafe_allow_html=True)
-st.sidebar.markdown('<div class="eyebrow">Workspace</div>', unsafe_allow_html=True)
-view = st.sidebar.radio("Navigation", ["Claims", "Overview", "Disparities", "Data preparation", "Models", "Evaluation", "Findings"], label_visibility="collapsed")
+# A persistent rail uses the same navigation controls in both sizes.
+if "rail_compact" not in st.session_state: st.session_state.rail_compact = True
+if "active_view" not in st.session_state: st.session_state.active_view = "Claims"
+compact = st.session_state.rail_compact
+st.markdown(f"<style>[data-testid='stSidebar'] {{width:{80 if compact else 248}px!important;min-width:{80 if compact else 248}px!important;}} </style>", unsafe_allow_html=True)
+st.sidebar.markdown('<div class="rail-brand"><span class="brand-mark">◈</span>' + ('' if compact else '<span>ClaimScope</span>') + '</div>', unsafe_allow_html=True)
+if st.sidebar.button("" if compact else "Collapse navigation", icon=":material/menu_open:" if not compact else ":material/menu:", help="Expand ClaimScope navigation" if compact else "Collapse to icon rail", key="toggle_rail", width="stretch"):
+    st.session_state.rail_compact = not compact
+    st.rerun()
+nav = [("Claims", "table_view", "Search, filter, and export claim records"),
+       ("Overview", "space_dashboard", "Compare outcomes across policyholder groups"),
+       ("Disparities", "query_stats", "Explore differences and income distribution"),
+       ("Data preparation", "tune", "Inspect missing values and preview model features"),
+       ("Models", "account_tree", "Train and compare four classifiers"),
+       ("Evaluation", "monitoring", "Inspect ROC curves and prediction errors"),
+       ("Findings", "description", "Review dataset findings and audit next steps")]
+for name, icon, detail in nav:
+    if st.sidebar.button("" if compact else name, icon=f":material/{icon}:", help=f"{name} — {detail}", key="nav_" + name,
+                         type="primary" if st.session_state.active_view == name else "secondary", width="stretch"):
+        st.session_state.active_view = name
+        st.rerun()
+view = st.session_state.active_view
 st.sidebar.divider()
-with st.sidebar.expander("Data source", expanded=False):
+# Keep the controls accessible in compact mode through labeled popovers.
+source_panel = st.sidebar.popover("" if compact else "Data source", icon=":material/upload_file:", help="Data source — upload a CSV or download the template", width="stretch")
+with source_panel:
     up = st.file_uploader("Upload claims CSV", type=["csv"], help="Upload the same 14-column schema as the bundled sample. Maximum 10 MB.")
     st.download_button("Download CSV template", Path(__file__).with_name("Insurance.csv").read_text().splitlines()[0] + "\n", "claims_template.csv", "text/csv", width="stretch")
 file_bytes = up.getvalue() if up is not None else None
@@ -253,19 +310,21 @@ except (ValueError, OSError, UnicodeError, pd.errors.ParserError) as exc:
     st.error(str(exc))
     st.info("Open Data source in the sidebar. Replace the CSV, or remove it to return to the bundled sample.")
     st.stop()
-with st.sidebar.expander("Model settings"):
+with st.sidebar.popover("" if compact else "Model settings", icon=":material/settings:", help="Model settings — split, seed, and category limits", width="stretch"):
     test_size = st.slider("Test split", 0.15, 0.40, 0.25, 0.05)
     seed = st.number_input("Random seed", value=42, min_value=0, max_value=4294967295, step=1)
     zone_top = st.slider("Teams to retain", 5, 30, 15)
     state_top = st.slider("States to retain", 5, 30, 15)
     occ_top = st.slider("Occupations to retain", 5, 25, 12)
     reason_top = st.slider("Claim reasons to retain", 5, 25, 12)
-st.sidebar.caption("Claim outcomes identify disparities, not proof of bias. Confirm findings against documented claim grounds.")
+if not compact:
+    st.sidebar.caption("Yudha’s workspace · ClaimScope")
+    st.sidebar.caption("Disparities are audit leads, not proof of bias.")
 head, action = st.columns([4, 1])
 with head:
     st.markdown('<div class="page-title">Insurance claims dashboard</div><div class="page-subtitle">Review outcomes, explore disparities, and evaluate predictive models.</div>', unsafe_allow_html=True)
 with action:
-    st.download_button("Export claims", df.to_csv(index=False).encode(), "claims.csv", "text/csv", type="primary", width="stretch")
+    st.download_button("Export claims", df.to_csv(index=False).encode(), "claims.csv", "text/csv", type="primary", icon=":material/download:", width="stretch")
 st.caption(("Uploaded dataset · " + up.name) if up else "Bundled sample · 1,790 insurance claims")
 overall = df["REPUDIATED"].mean()
 for i, (col, label, value, tag, note) in enumerate(zip(st.columns(4),
@@ -276,29 +335,30 @@ for i, (col, label, value, tag, note) in enumerate(zip(st.columns(4),
     col.markdown(f'<div class="kpi" style="animation-delay:{i*40}ms"><div class="kpi-label">{label}</div><div class="kpi-value">{value}</div><div class="kpi-note">{note}<span class="kpi-tag">{tag}</span></div></div>', unsafe_allow_html=True)
 st.divider()
 if view == "Claims":
-    st.subheader("Claim records")
-    st.caption("Search policyholders or policies, filter outcomes, and export the matching records.")
-    search_col, status_col, state_col = st.columns([2, 1, 1])
-    query = search_col.text_input("Search claims", placeholder="Name or policy number…")
-    status = status_col.selectbox("Outcome", ["All outcomes", "Approved Death Claim", "Repudiate Death"])
-    state = state_col.selectbox("State", ["All states"] + sorted(df.PI_STATE.unique()))
-    filtered = df.copy()
-    if query.strip():
-        filtered = filtered[filtered.PI_NAME.str.contains(query.strip(), case=False, regex=False) | filtered.POLICY_NO.astype(str).str.contains(query.strip(), case=False, regex=False)]
-    if status != "All outcomes":
-        filtered = filtered[filtered.POLICY_STATUS == status]
-    if state != "All states":
-        filtered = filtered[filtered.PI_STATE == state]
-    st.caption(f"{len(filtered):,} of {len(df):,} claims")
-    if filtered.empty:
-        st.info("No claims match these filters. Clear the search or choose All outcomes and All states.")
-    else:
-        display = filtered[["PI_NAME", "POLICY_NO", "PI_STATE", "PI_AGE", "SUM_ASSURED", "POLICY_STATUS"]].rename(columns={"PI_NAME":"Policyholder", "POLICY_NO":"Policy number", "PI_STATE":"State", "PI_AGE":"Age", "SUM_ASSURED":"Sum assured", "POLICY_STATUS":"Outcome"})
-        st.dataframe(display, hide_index=True, width="stretch", height=560,
-                     column_config={"Sum assured":st.column_config.NumberColumn(format="localized"), "Age":st.column_config.NumberColumn(format="%d")})
-        st.download_button("Export matching claims", filtered.to_csv(index=False).encode(), "filtered_claims.csv", "text/csv")
-    with st.expander("Data quality notes"):
-        for n in notes: st.write(n)
+    with st.container(border=True):
+        st.subheader("Claim records")
+        st.caption("Search policyholders or policies, filter outcomes, and export the matching records.")
+        search_col, status_col, state_col = st.columns([2, 1, 1])
+        query = search_col.text_input("Search claims", placeholder="Name or policy number…")
+        status = status_col.selectbox("Outcome", ["All outcomes", "Approved Death Claim", "Repudiate Death"])
+        state = state_col.selectbox("State", ["All states"] + sorted(df.PI_STATE.unique()))
+        filtered = df.copy()
+        if query.strip():
+            filtered = filtered[filtered.PI_NAME.str.contains(query.strip(), case=False, regex=False) | filtered.POLICY_NO.astype(str).str.contains(query.strip(), case=False, regex=False)]
+        if status != "All outcomes":
+            filtered = filtered[filtered.POLICY_STATUS == status]
+        if state != "All states":
+            filtered = filtered[filtered.PI_STATE == state]
+        st.caption(f"{len(filtered):,} of {len(df):,} claims")
+        if filtered.empty:
+            st.info("No claims match these filters. Clear the search or choose All outcomes and All states.")
+        else:
+            display = filtered[["PI_NAME", "POLICY_NO", "PI_STATE", "PI_AGE", "SUM_ASSURED", "POLICY_STATUS"]].rename(columns={"PI_NAME":"Policyholder", "POLICY_NO":"Policy number", "PI_STATE":"State", "PI_AGE":"Age", "SUM_ASSURED":"Sum assured", "POLICY_STATUS":"Outcome"})
+            st.dataframe(display, hide_index=True, width="stretch", height=560, row_height=48,
+                         column_config={"Sum assured":st.column_config.NumberColumn(format="localized"), "Age":st.column_config.NumberColumn(format="%d")})
+            st.download_button("Export matching claims", filtered.to_csv(index=False).encode(), "filtered_claims.csv", "text/csv")
+        with st.expander("Data quality notes"):
+            for n in notes: st.write(n)
 
 # ============================== TAB 1 — DESCRIPTIVE =========================
 if view == "Overview":
@@ -410,7 +470,8 @@ if view == "Disparities":
         st.pyplot(fig, width='stretch')
 
         st.subheader("By INCOME QUARTILE")
-        dz = df[df["PI_ANNUAL_INCOME"] > 0].copy()
+        income_min = st.number_input("Minimum recorded annual income", min_value=0, value=0, step=10000, help="Explore income groups above this threshold. Model training still uses the complete dataset.")
+        dz = df[df["PI_ANNUAL_INCOME"] > income_min].copy()
         st.caption(f"Only **{len(dz)}** of {len(df)} rows have income > 0 "
                    f"(rest are 0/missing) — read with caution.")
         if len(dz) > 20:
@@ -426,43 +487,39 @@ if view == "Disparities":
 
 # ============================== TAB 3 — FEATURE ENGINEERING ================
 if view == "Data preparation":
-    st.header("Feature Engineering")
-    st.markdown("""
-**Pipeline applied before training (auditable, reproducible):**
-
-1. **Identifiers dropped** — `POLICY_NO`, `PI_NAME` (no predictive value, PII).
-2. **Numeric parsing** — `SUM_ASSURED`, `PI_ANNUAL_INCOME` stripped of commas → float.
-3. **Missing-income flag** — `PI_ANNUAL_INCOME == 0` is treated as *missing* (a new
-   binary feature `INCOME_MISSING` is added) rather than a real zero. Median imputation
-   then fills the value for distance-based models.
-4. **ZONE normalisation** — case variants merged (`South`/`SOUTH` → `SOUTH`).
-5. **Rare-category bucketing** — high-cardinality fields (`ZONE`, `PI_STATE`,
-   `PI_OCCUPATION`, `REASON_FOR_CLAIM`) keep their top-N values; the long tail is grouped
-   as `Other` (controlled by sidebar sliders) to avoid sparse, unstable dummy columns.
-6. **Missing categoricals → `Unknown`** for `PI_OCCUPATION`, `REASON_FOR_CLAIM`.
-7. **Encoding** — numerics median-imputed + standardised (needed for KNN); categoricals
-   most-frequent-imputed + one-hot encoded (`handle_unknown='ignore'` so unseen test
-   categories don't break inference).
-8. **Target** — `POLICY_STATUS` → `REPUDIATED` (1 = *Repudiate Death*, 0 = *Approved*).
-""")
-    st.info("⚠️ **Leakage note:** `REASON_FOR_CLAIM` (e.g. *Suicide*, *Murder*) and "
-            "`EARLY_NON` are strongly outcome-related and are legitimate underwriting "
-            "signals — but if your goal is to *audit fairness* rather than maximise accuracy, "
-            "consider re-running with `ZONE`/`PI_STATE` removed to see how much the model "
-            "leans on processing channel vs case facts.")
-
-    X, y, num, cat = build_design_matrix(df, zone_top, state_top, occ_top, reason_top)
-    st.write(f"**Numeric features ({len(num)}):** {', '.join(num)}")
-    st.write(f"**Categorical features ({len(cat)}):** {', '.join(cat)}")
-    # show resulting encoded width
-    pre = make_preprocessor(num, cat).fit(X)
-    try:
-        width = pre.transform(X).shape[1]
-        st.success(f"After one-hot encoding, the design matrix has **{width}** columns "
-                   f"across **{len(X):,}** rows.")
-    except Exception as e:
-        st.error(f"Preprocess preview failed: {e}")
-    st.dataframe(X.head(10), width='stretch')
+    st.header("Data preparation")
+    st.caption("Inspect a field, adjust category limits, and preview exactly what enters the model.")
+    detail, preview = st.tabs(["Field quality", "Model features"])
+    with detail:
+        field = st.selectbox("Inspect field", ["PI_ANNUAL_INCOME", "PI_AGE", "SUM_ASSURED", "ZONE", "PI_STATE", "PI_OCCUPATION", "REASON_FOR_CLAIM"])
+        raw = pd.read_csv(io.BytesIO(file_bytes)) if file_bytes is not None else pd.read_csv(Path(__file__).with_name("Insurance.csv"))
+        m1,m2,m3 = st.columns(3)
+        m1.metric("Records", f"{len(raw):,}")
+        m2.metric("Missing values", f"{raw[field].isna().sum():,}")
+        m3.metric("Distinct values", f"{raw[field].nunique():,}")
+        if field == "PI_ANNUAL_INCOME":
+            st.info("Zero income means not recorded. The model flags these records and imputes income from the training set median.")
+            st.bar_chart(pd.Series({"Recorded":int((df[field]>0).sum()), "Missing or zero":int((df[field].fillna(0)<=0).sum())}), color=NAVY)
+        elif field in ["PI_AGE", "SUM_ASSURED"]:
+            st.bar_chart(df[field].value_counts(bins=12).sort_index().rename_axis("Range").reset_index(name="Claims").assign(Range=lambda x:x.Range.astype(str)).set_index("Range"), color=NAVY)
+        else:
+            limit = st.slider("Categories to preview", 4, 24, 12, step=4)
+            st.bar_chart(df[field].value_counts().head(limit), color=NAVY)
+        comparison = pd.DataFrame({"Original value":raw[field].astype(str).head(20), "Prepared value":df[field].astype(str).head(20)})
+        st.dataframe(comparison, hide_index=True, width="stretch")
+    with preview:
+        st.caption("Use Model settings in the navigation to adjust category limits. Preview updates immediately.")
+        X, y, num, cat = build_design_matrix(df, zone_top, state_top, occ_top, reason_top)
+        selected = st.multiselect("Preview columns", list(X.columns), default=list(X.columns)[:6])
+        if selected:
+            st.dataframe(X[selected].head(20), width="stretch", hide_index=True)
+        else:
+            st.info("Choose at least one column to preview model features.")
+        pre = make_preprocessor(num, cat).fit(X)
+        st.caption(f"{len(X):,} rows · {pre.transform(X).shape[1]} encoded features · identifiers excluded")
+        with st.expander("Transformation details"):
+            for note in notes: st.write(note)
+            st.write("Numeric values are median-imputed and standardized. Categories are one-hot encoded; unseen categories are handled safely.")
 
 # ============================== TAB 4 — MODELS =============================
 if view in ["Models", "Evaluation"] and (len(df) < 24 or df.REPUDIATED.value_counts().min() < 6 or df.REPUDIATED.nunique() < 2):
