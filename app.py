@@ -221,8 +221,16 @@ if st.session_state.pop("settings_saved", False):
 if "nav_pinned" not in st.session_state: st.session_state.nav_pinned = True
 if "active_view" not in st.session_state: st.session_state.active_view = "Claims"
 compact = not st.session_state.nav_pinned
-rail_width = 64 if compact else 240
+rail_width = 0 if compact else 240
 st.markdown("<style>[data-testid=stSidebar]{width:%dpx!important;min-width:%dpx!important;max-width:%dpx!important;}</style>" % (rail_width,rail_width,rail_width), unsafe_allow_html=True)
+if compact:
+    st.markdown("""<style>
+    [data-testid=stSidebar] {background:transparent!important;border:0!important;overflow:visible!important;pointer-events:none;}
+    [data-testid=stSidebarContent],[data-testid=stSidebarUserContent] {overflow:visible!important;width:0!important;padding:0!important;}
+    .st-key-toggle_rail {position:fixed;left:16px;top:20px;width:40px!important;z-index:1001;pointer-events:auto;}
+    .st-key-toggle_rail button {width:40px!important;padding:8px!important;}
+    .page-title,.page-subtitle {padding-left:48px;}
+    </style>""", unsafe_allow_html=True)
 if st.sidebar.button("" if compact else "ClaimScope", icon=":material/shield:", key="toggle_rail", width="stretch"):
     st.session_state.nav_pinned = compact
     st.rerun()
