@@ -294,6 +294,9 @@ st.markdown("""<style>
 </style>""", unsafe_allow_html=True)
 st.markdown("""<style>
 :root {--space:4px;--radius:8px;}
+[data-testid="stSidebar"] button>div,[data-testid="stSidebar"] button>div>span {display:flex!important;width:100%;justify-content:flex-start!important;gap:12px!important;}
+[data-testid="stPopoverBody"] {max-height:calc(100vh - 48px);overflow-y:auto;}
+
 [data-testid="stElementContainer"]:has(style) {display:none!important;}
 [data-testid="stMainBlockContainer"] [data-testid="stLayoutWrapper"]:has(.kpi) {min-height:144px!important;}
 
@@ -326,7 +329,7 @@ if "rail_compact" not in st.session_state: st.session_state.rail_compact = True
 if "active_view" not in st.session_state: st.session_state.active_view = "Claims"
 compact = st.session_state.rail_compact
 rail_width = 64 if compact else 240
-st.markdown("<style>[data-testid=stSidebar] {width:%dpx!important;min-width:%dpx!important;max-width:%dpx!important;}" % (rail_width, rail_width, rail_width) + ('[data-testid="stSidebar"]:hover,[data-testid="stSidebar"]:focus-within {width:240px!important;min-width:240px!important;max-width:240px!important;margin-right:-176px;z-index:1000;box-shadow:4px 0 16px #34373c0d;}\n[data-testid="stSidebar"]:not(:hover):not(:focus-within) button p {display:none;}\n[data-testid="stSidebar"]:not(:hover):not(:focus-within) [data-testid="stPopoverButton"]>svg {display:none;}' if compact else "") + "</style>", unsafe_allow_html=True)
+st.markdown("<style>[data-testid=stSidebar] {width:%dpx!important;min-width:%dpx!important;max-width:%dpx!important;}" % (rail_width, rail_width, rail_width) + ('[data-testid="stSidebar"]:hover,[data-testid="stSidebar"]:focus-within {width:240px!important;min-width:240px!important;max-width:240px!important;margin-right:-176px;z-index:1000;box-shadow:4px 0 16px #34373c0d;}\n[data-testid="stSidebar"]:not(:hover):not(:focus-within) button p {width:0;max-width:0;overflow:hidden;opacity:0;}\n[data-testid="stSidebar"]:not(:hover):not(:focus-within) [data-testid="stPopoverButton"]>svg {display:none;}' if compact else "") + "</style>", unsafe_allow_html=True)
 if st.sidebar.button("ClaimScope", icon=":material/shield:", help="Pin navigation open" if compact else "Unpin navigation", key="toggle_rail", width="stretch"):
     st.session_state.rail_compact = not compact
     st.rerun()
