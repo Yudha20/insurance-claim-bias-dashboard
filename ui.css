@@ -8,7 +8,7 @@ html,body,[data-testid=stApp] {font-family:"Product Sans",Arial,sans-serif;color
 [data-testid=stSidebar] {background:white;border-right:1px solid var(--line);transition:width 200ms ease,min-width 200ms ease,max-width 200ms ease;overflow:hidden;}
 [data-testid=stSidebarHeader],[data-testid=stSidebarCollapsedControl] {display:none;}
 [data-testid=stSidebarContent] {padding:0!important;}
-[data-testid=stSidebarUserContent] {padding:12px 8px!important;}
+[data-testid=stSidebarUserContent] {padding:76px 8px 12px!important;}
 [data-testid=stSidebarUserContent]>div {padding:0!important;}
 [data-testid=stSidebar] [data-testid=stVerticalBlock] {gap:4px!important;padding:0!important;}
 [data-testid=stSidebar] button {justify-content:flex-start;min-height:36px;height:36px;padding:8px 12px;border:0;background:transparent;box-shadow:none;white-space:nowrap;}
@@ -83,3 +83,5 @@ button:focus-visible,input:focus-visible {outline:2px solid var(--accent);outlin
 /* All reading and input text meets the 12px floor. */
 [data-testid=stApp] :is(p,label,input,textarea,button,small,code,pre),[data-testid=stCaptionContainer],[role=option] {font-size:max(12px,.8125rem)!important;}
 [data-testid=stApp] small,[data-testid=stCaptionContainer] p {font-size:12px!important;}
+
+@media(max-width:900px) {[data-testid=stSidebarUserContent] {padding-top:68px!important;}}
