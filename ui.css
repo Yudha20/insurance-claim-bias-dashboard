@@ -28,7 +28,7 @@ button:focus-visible,input:focus-visible {outline:2px solid var(--accent);outlin
 .st-key-header_actions button {border-radius:999px!important;height:36px;min-height:36px;padding:4px 16px;white-space:nowrap;}
 [data-testid=stDialog] [role=dialog] {border-radius:12px;max-height:calc(100vh - 48px);overflow-y:auto;}
 [data-testid=stPopoverBody] {border-radius:12px;max-width:min(400px,calc(100vw - 32px));max-height:calc(100vh - 48px);overflow:auto;}
-[data-testid=stDataFrame] {border:1px solid var(--line);overflow:hidden;}
+[data-testid=stDataFrame] {border:0!important;padding:0!important;border-radius:0!important;background:transparent;}
 @media(max-width:900px) {[data-testid=stMainBlockContainer] {padding:24px 16px 24px;} .st-key-header_actions [data-testid=stHorizontalBlock] {justify-content:flex-start;}}
 @media(prefers-reduced-motion:reduce) {*,*::before,*::after {transition:none!important;animation:none!important;}}
 .st-key-header_actions {gap:8px!important;}
