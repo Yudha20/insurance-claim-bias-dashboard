@@ -19,6 +19,8 @@ of bias, because the dataset does not record whether each repudiation was *justi
 """
 import warnings; warnings.filterwarnings("ignore")
 import io
+import html
+from pathlib import Path
 import numpy as np
 import pandas as pd
 import matplotlib
@@ -39,13 +41,62 @@ from sklearn.metrics import (accuracy_score, precision_score, recall_score, f1_s
                              classification_report)
 
 # ----------------------------------------------------------------------------
-st.set_page_config(page_title="Insurance Claim Bias Dashboard", layout="wide",
+st.set_page_config(page_title="ClaimScope · Insurance analytics", layout="wide",
                    initial_sidebar_state="expanded")
 
-NAVY, RED, GREEN, ORANGE, GREY = "#1f3a5f", "#c0392b", "#27ae60", "#e67e22", "#7f8c8d"
+NAVY, RED, GREEN, ORANGE, GREY = "#375DFB", "#C25263", "#23876C", "#8798DC", "#778196"
 ACCENT = [NAVY, RED, GREEN, ORANGE]
 plt.rcParams.update({"axes.grid": True, "grid.alpha": 0.25, "axes.axisbelow": True,
                      "font.size": 9})
+
+# Visual thesis: quiet white surfaces, precise type, and a single cobalt action color.
+# Content plan: navigation, portfolio metrics, searchable claims, analytical detail.
+# Interaction thesis: staggered metrics, responsive navigation, fast hover/focus feedback.
+st.markdown("""<style>
+:root { --unit:4px; --ink:#20232b; --muted:#667085; --line:#e8ebf0; --accent:#375dfb; }
+[data-testid="stAppViewContainer"] {background:#f8f9fb;}
+[data-testid="stHeader"] {background:rgba(248,249,251,.96);}
+[data-testid="stMainBlockContainer"] {padding:24px 32px 48px;max-width:1600px;}
+[data-testid="stSidebar"] {background:#fff;border-right:1px solid var(--line);width:248px!important;}
+[data-testid="stSidebar"] [data-testid="stVerticalBlock"] {gap:16px;}
+[data-testid="stVerticalBlock"] {gap:16px;}
+h1 {font-size:28px!important;letter-spacing:-1px!important;font-weight:650!important;line-height:1.3!important;}
+h2 {font-size:20px!important;letter-spacing:-.5px!important;font-weight:600!important;}
+h3 {font-size:16px!important;font-weight:600!important;}
+p, label {font-size:14px!important;line-height:1.6!important;}
+[data-testid="stCaptionContainer"] {color:var(--muted);}
+.brand {display:flex;align-items:center;gap:12px;font-size:24px;font-weight:700;letter-spacing:-1px;padding:0 0 20px;border-bottom:1px solid var(--line);}
+.brand-mark {background:#20232b;color:white;border-radius:12px;display:grid;place-items:center;width:40px;height:40px;font-size:24px;}
+.eyebrow {font-size:11px;color:#697386;font-weight:600;letter-spacing:1.2px;text-transform:uppercase;margin:4px 0 8px;}
+.page-title {font-size:24px;font-weight:650;letter-spacing:-.8px;line-height:32px;margin:0;}
+.page-subtitle {font-size:13px;color:#667085;margin:4px 0 0;}
+.kpi {background:white;border:1px solid var(--line);border-radius:16px;padding:20px 24px;min-height:148px;animation:arrive .32s ease both;transition:border-color .16s,transform .16s;}
+.kpi:hover {border-color:#b7c5fb;transform:translateY(-2px);}
+.kpi-label {font-size:13px;color:#667085;margin-bottom:12px;}
+.kpi-value {font-size:32px;line-height:40px;font-weight:600;letter-spacing:-1px;font-variant-numeric:tabular-nums;}
+.kpi-note {font-size:12px;color:#667085;margin-top:8px;}
+.kpi-tag {display:inline-block;background:#edf2ff;color:#3455bc;font-size:11px;border-radius:6px;padding:0 8px;vertical-align:middle;letter-spacing:0;margin-left:8px;}
+[data-testid="stDataFrame"] {border:1px solid var(--line);border-radius:12px;overflow:hidden;}
+[data-testid="stBaseButton-segmented_control"],button {transition:background .16s,border-color .16s,box-shadow .16s!important;}
+button:hover {border-color:#8ca3ff!important;}
+button:focus-visible,a:focus-visible,input:focus-visible {outline:2px solid #375dfb!important;outline-offset:4px!important;}
+button:disabled {opacity:.45;cursor:not-allowed!important;}
+[data-testid="stExpander"] {background:#fff;border:1px solid var(--line);border-radius:12px;}
+[data-testid="stAlert"] {border-radius:12px;}
+[data-testid="stSidebar"] [role="radiogroup"] label {padding:8px 12px;border-radius:8px;transition:background .16s;}
+[data-testid="stSidebar"] [role="radiogroup"] label:hover {background:#f0f3ff;}
+[data-testid="stSidebar"] [role="radiogroup"] label:has(input:checked) {background:#edf2ff;color:#375dfb;}
+[data-testid="stImage"] {background:white;border-radius:12px;overflow:hidden;}
+[data-testid="stMain"] {animation:arrive .24s ease both;}
+@keyframes arrive {from {opacity:0;transform:translateY(8px)} to {opacity:1;transform:translateY(0)}}
+@media(prefers-reduced-motion:reduce) {*,*::before,*::after {animation:none!important;transition:none!important;scroll-behavior:auto!important;}}
+@media(max-width:768px) {[data-testid="stMainBlockContainer"] {padding:16px 16px 32px;} .kpi {padding:16px;min-height:128px;} .kpi-value {font-size:28px;} .page-title {font-size:20px;} }
+</style>""", unsafe_allow_html=True)
+plt.rcParams.update({"axes.spines.top":False,"axes.spines.right":False,
+                     "axes.edgecolor":"#E8EBF0","grid.color":"#E8EBF0",
+                     "text.color":"#20232B","axes.labelcolor":"#667085",
+                     "xtick.color":"#667085","ytick.color":"#667085",
+                     "figure.facecolor":"white","axes.facecolor":"white"})
 
 TARGET = "POLICY_STATUS"
 POSITIVE_LABEL = "Repudiate Death"          # positive class = a rejected claim
@@ -58,10 +109,30 @@ ID_COLS = ["POLICY_NO", "PI_NAME"]          # dropped from modelling (identifier
 @st.cache_data(show_spinner=False)
 def load_and_engineer(file_bytes: bytes | None):
     if file_bytes is None:
-        df = pd.read_csv("Insurance.csv")
+        df = pd.read_csv(Path(__file__).with_name("Insurance.csv"))
     else:
         df = pd.read_csv(io.BytesIO(file_bytes))
 
+    required = ["POLICY_NO", "PI_NAME", "PI_GENDER", "SUM_ASSURED", "ZONE", "PAYMENT_MODE",
+                "EARLY_NON", "PI_OCCUPATION", "MEDICAL_NONMED", "PI_STATE", "REASON_FOR_CLAIM",
+                "PI_AGE", "PI_ANNUAL_INCOME", "POLICY_STATUS"]
+    missing = sorted(set(required) - set(df.columns))
+    if missing:
+        raise ValueError("Missing columns: " + ", ".join(missing))
+    if df.empty:
+        raise ValueError("This CSV has no claim records. Add records and upload it again.")
+    if len(df) > 100000:
+        raise ValueError("Use a CSV with at most 100,000 claims for this dashboard.")
+    allowed = {"Approved Death Claim", "Repudiate Death"}
+    df[TARGET] = df[TARGET].astype(str).str.strip()
+    if not set(df[TARGET]).issubset(allowed):
+        raise ValueError("POLICY_STATUS must contain only Approved Death Claim or Repudiate Death.")
+    df["PI_AGE"] = pd.to_numeric(df["PI_AGE"], errors="coerce")
+    if df["PI_AGE"].isna().any() or not df["PI_AGE"].between(0, 120).all():
+        raise ValueError("PI_AGE must contain numbers between 0 and 120.")
+    for col in required:
+        if col not in ["PI_AGE", "SUM_ASSURED", "PI_ANNUAL_INCOME"]:
+            df[col] = df[col].fillna("Unknown").astype(str).str.strip().replace("", "Unknown")
     notes = []
     # 1) parse comma-formatted numerics
     for c in NUMERIC_COMMA_COLS:
@@ -165,44 +236,72 @@ def cramers_v(df, col, target="REPUDIATED"):
 # ----------------------------------------------------------------------------
 # Sidebar
 # ----------------------------------------------------------------------------
-st.sidebar.title("⚙️ Controls")
-up = st.sidebar.file_uploader("Upload claims CSV (or use bundled sample)", type=["csv"])
-file_bytes = up.read() if up is not None else None
-df, notes = load_and_engineer(file_bytes)
-
-st.sidebar.markdown("**Modelling parameters**")
-test_size = st.sidebar.slider("Test split", 0.15, 0.40, 0.25, 0.05)
-seed = st.sidebar.number_input("Random seed", value=42, step=1)
-st.sidebar.markdown("**Rare-category bucketing (keep top-N, group rest as 'Other')**")
-zone_top = st.sidebar.slider("ZONE top-N", 5, 30, 15)
-state_top = st.sidebar.slider("STATE top-N", 5, 30, 15)
-occ_top = st.sidebar.slider("OCCUPATION top-N", 5, 25, 12)
-reason_top = st.sidebar.slider("REASON top-N", 5, 25, 12)
-
-st.sidebar.info("Positive class = **Repudiated** claim. "
-                "Recall here = share of true repudiations the model catches.")
-
-# ----------------------------------------------------------------------------
-# Header
-# ----------------------------------------------------------------------------
-st.title("🛡️ Insurance Claim-Settlement Bias & Prediction Dashboard")
+st.sidebar.markdown('<div class="brand"><span class="brand-mark">◈</span>ClaimScope</div>', unsafe_allow_html=True)
+st.sidebar.markdown('<div class="eyebrow">Workspace</div>', unsafe_allow_html=True)
+view = st.sidebar.radio("Navigation", ["Claims", "Overview", "Disparities", "Data preparation", "Models", "Evaluation", "Findings"], label_visibility="collapsed")
+st.sidebar.divider()
+with st.sidebar.expander("Data source", expanded=False):
+    up = st.file_uploader("Upload claims CSV", type=["csv"], help="Upload the same 14-column schema as the bundled sample. Maximum 10 MB.")
+    st.download_button("Download CSV template", Path(__file__).with_name("Insurance.csv").read_text().splitlines()[0] + "\n", "claims_template.csv", "text/csv", width="stretch")
+file_bytes = up.getvalue() if up is not None else None
+try:
+    if file_bytes is not None and len(file_bytes) > 10*1024*1024:
+        raise ValueError("File exceeds 10 MB. Upload a smaller CSV.")
+    df, notes = load_and_engineer(file_bytes)
+except (ValueError, OSError, UnicodeError, pd.errors.ParserError) as exc:
+    st.title("Unable to load claims")
+    st.error(str(exc))
+    st.info("Open Data source in the sidebar. Replace the CSV, or remove it to return to the bundled sample.")
+    st.stop()
+with st.sidebar.expander("Model settings"):
+    test_size = st.slider("Test split", 0.15, 0.40, 0.25, 0.05)
+    seed = st.number_input("Random seed", value=42, min_value=0, max_value=4294967295, step=1)
+    zone_top = st.slider("Teams to retain", 5, 30, 15)
+    state_top = st.slider("States to retain", 5, 30, 15)
+    occ_top = st.slider("Occupations to retain", 5, 25, 12)
+    reason_top = st.slider("Claim reasons to retain", 5, 25, 12)
+st.sidebar.caption("Claim outcomes identify disparities, not proof of bias. Confirm findings against documented claim grounds.")
+head, action = st.columns([4, 1])
+with head:
+    st.markdown('<div class="page-title">Insurance claims dashboard</div><div class="page-subtitle">Review outcomes, explore disparities, and evaluate predictive models.</div>', unsafe_allow_html=True)
+with action:
+    st.download_button("Export claims", df.to_csv(index=False).encode(), "claims.csv", "text/csv", type="primary", width="stretch")
+st.caption(("Uploaded dataset · " + up.name) if up else "Bundled sample · 1,790 insurance claims")
 overall = df["REPUDIATED"].mean()
-c1, c2, c3, c4 = st.columns(4)
-c1.metric("Total claims", f"{len(df):,}")
-c2.metric("Approved", f"{int((df['REPUDIATED']==0).sum()):,}",
-          f"{(1-overall)*100:.1f}%")
-c3.metric("Repudiated", f"{int(df['REPUDIATED'].sum()):,}", f"{overall*100:.1f}%")
-c4.metric("Columns", f"{df.shape[1]}")
-
-with st.expander("🔧 Data-cleaning notes (what the pipeline changed)", expanded=False):
-    for n in notes:
-        st.write("•", n)
-
-tabs = st.tabs(["1️⃣ Descriptive", "2️⃣ Diagnostic / Bias", "3️⃣ Feature Engineering",
-                "4️⃣ Models", "5️⃣ Evaluation", "📋 Findings"])
+for i, (col, label, value, tag, note) in enumerate(zip(st.columns(4),
+    ["Total claims", "Approved claims", "Repudiated claims", "Income recorded"],
+    [f"{len(df):,}", f"{(df.REPUDIATED==0).sum():,}", f"{df.REPUDIATED.sum():,}", f"{(df.PI_ANNUAL_INCOME.fillna(0)>0).mean()*100:.1f}%"],
+    ["All records", f"{(1-overall)*100:.1f}%", f"{overall*100:.1f}%", "Data quality"],
+    ["Current dataset", "Share of all claims", "Share of all claims", "Non-zero annual income"])):
+    col.markdown(f'<div class="kpi" style="animation-delay:{i*40}ms"><div class="kpi-label">{label}</div><div class="kpi-value">{value}</div><div class="kpi-note">{note}<span class="kpi-tag">{tag}</span></div></div>', unsafe_allow_html=True)
+st.divider()
+if view == "Claims":
+    st.subheader("Claim records")
+    st.caption("Search policyholders or policies, filter outcomes, and export the matching records.")
+    search_col, status_col, state_col = st.columns([2, 1, 1])
+    query = search_col.text_input("Search claims", placeholder="Name or policy number…")
+    status = status_col.selectbox("Outcome", ["All outcomes", "Approved Death Claim", "Repudiate Death"])
+    state = state_col.selectbox("State", ["All states"] + sorted(df.PI_STATE.unique()))
+    filtered = df.copy()
+    if query.strip():
+        filtered = filtered[filtered.PI_NAME.str.contains(query.strip(), case=False, regex=False) | filtered.POLICY_NO.astype(str).str.contains(query.strip(), case=False, regex=False)]
+    if status != "All outcomes":
+        filtered = filtered[filtered.POLICY_STATUS == status]
+    if state != "All states":
+        filtered = filtered[filtered.PI_STATE == state]
+    st.caption(f"{len(filtered):,} of {len(df):,} claims")
+    if filtered.empty:
+        st.info("No claims match these filters. Clear the search or choose All outcomes and All states.")
+    else:
+        display = filtered[["PI_NAME", "POLICY_NO", "PI_STATE", "PI_AGE", "SUM_ASSURED", "POLICY_STATUS"]].rename(columns={"PI_NAME":"Policyholder", "POLICY_NO":"Policy number", "PI_STATE":"State", "PI_AGE":"Age", "SUM_ASSURED":"Sum assured", "POLICY_STATUS":"Outcome"})
+        st.dataframe(display, hide_index=True, width="stretch", height=560,
+                     column_config={"Sum assured":st.column_config.NumberColumn(format="localized"), "Age":st.column_config.NumberColumn(format="%d")})
+        st.download_button("Export matching claims", filtered.to_csv(index=False).encode(), "filtered_claims.csv", "text/csv")
+    with st.expander("Data quality notes"):
+        for n in notes: st.write(n)
 
 # ============================== TAB 1 — DESCRIPTIVE =========================
-with tabs[0]:
+if view == "Overview":
     st.header("Descriptive Analysis — Cross-Tabulation vs POLICY_STATUS")
     st.caption("Each row of a cross-tab is row-normalised to show the **repudiation rate** "
                "within that group. Dashed line = overall rate.")
@@ -239,7 +338,7 @@ with tabs[0]:
     st.dataframe(df.groupby(TARGET)[num_cols].describe().T, width='stretch')
 
 # ============================== TAB 2 — DIAGNOSTIC =========================
-with tabs[1]:
+if view == "Disparities":
     st.header("Diagnostic Analysis — Probing Differential Treatment")
     st.warning("**Interpretation guardrail:** a higher repudiation rate for a group is a "
                "*disparity*, not automatically *bias*. The data does not record whether each "
@@ -315,7 +414,7 @@ with tabs[1]:
         st.caption(f"Only **{len(dz)}** of {len(df)} rows have income > 0 "
                    f"(rest are 0/missing) — read with caution.")
         if len(dz) > 20:
-            dz["Q"] = pd.qcut(dz["PI_ANNUAL_INCOME"], 4, labels=["Q1 low", "Q2", "Q3", "Q4 high"])
+            dz["Q"] = pd.qcut(dz["PI_ANNUAL_INCOME"], 4, duplicates="drop")
             g = dz.groupby("Q", observed=True)["REPUDIATED"].agg(["mean", "count"])
             fig, ax = plt.subplots(figsize=(7, 3.5))
             ax.bar(g.index.astype(str), g["mean"] * 100, color=ORANGE)
@@ -326,7 +425,7 @@ with tabs[1]:
             st.pyplot(fig, width='stretch')
 
 # ============================== TAB 3 — FEATURE ENGINEERING ================
-with tabs[2]:
+if view == "Data preparation":
     st.header("Feature Engineering")
     st.markdown("""
 **Pipeline applied before training (auditable, reproducible):**
@@ -366,7 +465,11 @@ with tabs[2]:
     st.dataframe(X.head(10), width='stretch')
 
 # ============================== TAB 4 — MODELS =============================
-with tabs[3]:
+if view in ["Models", "Evaluation"] and (len(df) < 24 or df.REPUDIATED.value_counts().min() < 6 or df.REPUDIATED.nunique() < 2):
+    st.warning("Models need at least 24 records and 6 claims of each outcome. Use a larger dataset or return to Claims.")
+    st.stop()
+
+if view == "Models":
     st.header("Supervised Classification Models")
     st.caption("Models: KNN (k=15), Decision Tree (depth 6, balanced), "
                "Random Forest (300 trees, depth 12, balanced), Gradient Boosting (defaults). "
@@ -401,12 +504,10 @@ with tabs[3]:
     st.session_state["results"] = results   # share with eval tab
 
 # ============================== TAB 5 — EVALUATION =========================
-with tabs[4]:
+if view == "Evaluation":
     st.header("Model Evaluation — Stability & Errors")
-    if "results" not in st.session_state:
-        X, y, num, cat = build_design_matrix(df, zone_top, state_top, occ_top, reason_top)
-        st.session_state["results"], _ = train_models(X, y, num, cat, test_size, int(seed))
-    results = st.session_state["results"]
+    X, y, num, cat = build_design_matrix(df, zone_top, state_top, occ_top, reason_top)
+    results, _ = train_models(X, y, num, cat, test_size, int(seed))
 
     st.subheader("ROC curves")
     fig, ax = plt.subplots(figsize=(7, 5.5))
@@ -466,54 +567,22 @@ with tabs[4]:
                "to gauge a factor's true weight.")
 
 # ============================== TAB 6 — FINDINGS ===========================
-with tabs[5]:
+if view == "Findings":
     st.header("Findings & Recommendations")
-    st.markdown(f"""
-*All figures below recompute live from the loaded data; the narrative reflects the
-bundled sample (n={len(df):,}, overall repudiation **{overall*100:.1f}%**).*
-
-### What the data shows
-1. **The single strongest, operationally clear disparity is by processing TEAM/ZONE.**
-   Repudiation rates run from the low single digits to the mid-50s across teams — a
-   double-digit-fold spread — and ZONE has the highest *robust* association with the
-   outcome (Cramér's V ≈ 0.33, χ² p ≪ 0.001). Policyholder **STATE** shows a similar
-   geographic pattern (V ≈ 0.28).
-2. **Gender shows no statistically significant association** (χ² p ≈ 0.16, V ≈ 0.03).
-   On this data, a gender-bias hypothesis is **not** supported.
-3. **Payment mode matters:** single-premium policies are repudiated far less than
-   quarterly/half-yearly ones — consistent with lapse/persistency effects rather than
-   discrimination, but worth confirming.
-4. **Medically underwritten policies are repudiated about half as often** as
-   non-medical ones — expected, since health is verified at issuance.
-5. **Income (where recorded) trends inversely with repudiation** — lower-income
-   quartiles see higher repudiation — **but 62.5% of income values are 0/missing**, so
-   this is a weak, caveated signal, not a conclusion.
-6. **Models confirm the outcome is predictable** (ROC-AUC ≈ 0.73–0.79; Random Forest
-   best). Predictability concentrated in channel/geography features is itself evidence
-   that *who handles the claim* carries weight beyond pure case facts.
-
-### What this is — and is not
-- These are **disparities**, surfaced rigorously. They are **leads for audit**, not a
-  finding of unlawful bias.
-- The dataset does **not** record whether each repudiation was *justified* (fraud,
-  non-disclosure, exclusion clause). Without that ground truth, differential rates can
-  reflect genuinely different risk books **or** inconsistent adjudication — the two are
-  not separable here.
-- **To verify**, pull a stratified sample of repudiations from the highest- and
-  lowest-rate teams and have an independent reviewer score whether each rejection was
-  policy-justified. Equal justified-rejection rates ⇒ disparity explained by risk;
-  unequal ⇒ evidence of inconsistent treatment.
-
-### Recommended next steps
-- Audit the top-spread teams (e.g. JKB JAMMU / SOUTH high vs JKB CREDITOR / TEAM
-  HIMALAYAN low) against documented repudiation grounds.
-- Re-run the model with `ZONE`/`PI_STATE` removed; a large AUC drop quantifies how much
-  predictive power rides on channel rather than case facts.
-- Fix data capture for `PI_ANNUAL_INCOME` (the 0-as-missing problem) before drawing any
-  income-fairness conclusion.
-- Standardise repudiation criteria and add a second-reviewer check for early/borderline
-  claims.
-""")
+    st.write(f"Of {len(df):,} claims, {int(df.REPUDIATED.sum()):,} were repudiated ({overall:.1%}).")
+    group = df.groupby("ZONE").REPUDIATED.agg(["mean", "count"])
+    eligible = group[group["count"] >= 20].sort_values("mean")
+    if len(eligible) >= 2:
+        st.write(f"Among teams with at least 20 claims, repudiation ranges from {eligible['mean'].min():.1%} to {eligible['mean'].max():.1%}. Compare case mix and documented grounds before interpreting this gap.")
+    else:
+        st.info("Too few teams have 20 claims for a stable team comparison.")
+    st.write(f"Annual income is missing or zero for {(df.PI_ANNUAL_INCOME.fillna(0) <= 0).mean():.1%} of records. Treat income comparisons cautiously.")
+    st.subheader("Audit next steps")
+    st.markdown("""1. Review a stratified sample from teams with high and low repudiation rates.
+2. Verify documented policy grounds and case mix with an independent reviewer.
+3. Improve missing income capture before drawing income-related conclusions.
+4. Compare models with and without geography and processing-channel attributes.""")
+    st.info("Disparities are leads for audit, not proof of bias. This dataset does not establish whether each repudiation was justified.")
     st.download_button("⬇️ Download cleaned dataset (CSV)",
                        df.to_csv(index=False).encode(), "insurance_cleaned.csv", "text/csv")
 
