@@ -19,6 +19,7 @@ of bias, because the dataset does not record whether each repudiation was *justi
 """
 import warnings; warnings.filterwarnings("ignore")
 import io
+import base64
 import html
 from pathlib import Path
 import numpy as np
@@ -26,6 +27,10 @@ import pandas as pd
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+from matplotlib import font_manager
+for font_file in (Path(__file__).parent / "assets" / "fonts").glob("*.ttf"):
+    font_manager.fontManager.addfont(str(font_file))
+plt.rcParams["font.family"] = "Product Sans"
 import streamlit as st
 from scipy.stats import chi2_contingency
 from sklearn.model_selection import train_test_split
@@ -202,7 +207,7 @@ if "active_view" not in st.session_state: st.session_state.active_view = "Claims
 compact = not st.session_state.nav_pinned
 rail_width = 64 if compact else 240
 st.markdown("<style>[data-testid=stSidebar]{width:%dpx!important;min-width:%dpx!important;max-width:%dpx!important;}</style>" % (rail_width,rail_width,rail_width), unsafe_allow_html=True)
-if st.sidebar.button("" if compact else "ClaimScope", icon=":material/shield:", help="Expand navigation" if compact else "Collapse navigation", key="toggle_rail", width="stretch"):
+if st.sidebar.button("" if compact else "ClaimScope", icon=":material/shield:", key="toggle_rail", width="stretch"):
     st.session_state.nav_pinned = compact
     st.rerun()
 nav = [("Claims", "table_view", "Search, filter, and export claim records"),
@@ -213,12 +218,20 @@ nav = [("Claims", "table_view", "Search, filter, and export claim records"),
        ("Evaluation", "monitoring", "Inspect ROC curves and prediction errors"),
        ("Findings", "description", "Review dataset findings and audit next steps")]
 for name, icon, detail in nav:
-    if st.sidebar.button("" if compact else name, icon=f":material/{icon}:", help=f"{name} — {detail}", key="nav_" + name,
+    if st.sidebar.button("" if compact else name, icon=f":material/{icon}:", key="nav_" + name,
                          type="primary" if st.session_state.active_view == name else "secondary", width="stretch"):
         st.session_state.active_view = name
         st.rerun()
 view = st.session_state.active_view
-st.markdown(Path(__file__).with_name("ui.css").read_text().join(["<style>", "</style>"]), unsafe_allow_html=True)
+@st.cache_data(show_spinner=False)
+def product_font_css():
+    faces = []
+    for filename, weight, style in [("regular",400,"normal"),("bold",700,"normal"),("italic",400,"italic"),("bold-italic",700,"italic")]:
+        data = base64.b64encode((Path(__file__).parent / "assets" / "fonts" / (filename + ".ttf")).read_bytes()).decode()
+        faces.append(f"@font-face{{font-family:'Product Sans';font-style:{style};font-weight:{weight};font-display:swap;src:url(data:font/ttf;base64,{data}) format('truetype');}}")
+    return "".join(faces)
+st.markdown("<style>" + product_font_css() + Path(__file__).with_name("ui.css").read_text() + "</style>", unsafe_allow_html=True)
+
 head, actions = st.columns([1.2, 1], gap="small", vertical_alignment="center")
 with head:
     st.markdown('<div class="page-title">Insurance claims dashboard</div><div class="page-subtitle">Review outcomes, explore disparities, and evaluate predictive models.</div>', unsafe_allow_html=True)

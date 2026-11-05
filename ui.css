@@ -1,11 +1,11 @@
-:root {--space:4px;--ink:#34373c;--muted:#757980;--line:#e9eaed;--accent:#365cff;--radius:8px;}
-html,body,[data-testid=stApp] {font-family:Arial,Helvetica,sans-serif;color:var(--ink);}
+:root {--space:4px;--ink:#34373c;--muted:#757980;--line:#e9eaed;--accent:#365cff;--radius:12px;}
+html,body,[data-testid=stApp] {font-family:"Product Sans",Arial,sans-serif;color:var(--ink);}
 [data-testid=stAppViewContainer] {background:#fafafa;}
 [data-testid=stHeader] {background:#fff;border-bottom:1px solid var(--line);}
 [data-testid=stMainBlockContainer] {padding:80px 24px 32px;max-width:1600px;}
 [data-testid=stElementContainer]:has(style) {display:none;}
 [data-testid=stVerticalBlock] {gap:16px;}
-[data-testid=stSidebar] {background:white;border-right:1px solid var(--line);transition:none!important;overflow:hidden;}
+[data-testid=stSidebar] {background:white;border-right:1px solid var(--line);transition:width 200ms ease,min-width 200ms ease,max-width 200ms ease;overflow:hidden;}
 [data-testid=stSidebarHeader],[data-testid=stSidebarCollapsedControl] {display:none;}
 [data-testid=stSidebarContent] {padding:0!important;}
 [data-testid=stSidebarUserContent] {padding:12px 8px!important;}
@@ -25,23 +25,23 @@ p,label,input,button {font-size:13px;}
 small,[data-testid=stCaptionContainer] {font-size:12px;color:#85888f;}
 .page-title {font-size:20px;line-height:28px;}
 .page-subtitle {font-size:12px;color:#7d8188;line-height:20px;margin-top:4px;}
-.kpi {box-sizing:border-box;background:#fff;border:1px solid var(--line);border-radius:8px;padding:20px;min-height:144px;transition:box-shadow .16s ease,border-color .16s ease;}
+.kpi {box-sizing:border-box;background:#fff;border:1px solid var(--line);border-radius:12px;padding:20px;min-height:144px;transition:box-shadow .16s ease,border-color .16s ease;}
 .kpi:hover {box-shadow:0 4px 16px #2c344812;border-color:#dce2ef;}
 .kpi-label {font-size:13px;color:#74777e;margin-bottom:12px;}
 .kpi-value {font-size:32px;font-weight:500;line-height:40px;letter-spacing:-1px;font-variant-numeric:tabular-nums;}
 .kpi-note {font-size:12px;color:#85888f;margin-top:8px;}
 .kpi-tag {display:inline-block;font-size:12px;line-height:20px;background:#eef2ff;color:#5b6fbc;border-radius:4px;padding:0 8px;margin-left:8px;}
 [data-testid=stLayoutWrapper]:has(.kpi) {min-height:144px;}
-[data-testid=stVerticalBlockBorderWrapper]>div {border-radius:8px;padding:20px;background:#fff;border-color:var(--line);}
-button,input,[data-baseweb=select]>div,[data-testid=stExpander],[data-testid=stDataFrame],[data-testid=stAlert] {border-radius:8px;}
+[data-testid=stVerticalBlockBorderWrapper]>div {border-radius:12px;padding:20px;background:#fff;border-color:var(--line);}
+button,input,[data-baseweb=select]>div,[data-testid=stExpander],[data-testid=stDataFrame],[data-testid=stAlert] {border-radius:12px;}
 button {min-height:36px;transition:background .12s,border-color .12s;}
 button:hover {filter:brightness(.95);border-color:#b9bec8;}
 button:active {filter:brightness(.90);}
 button:focus-visible,input:focus-visible {outline:2px solid var(--accent);outline-offset:4px;}
 .st-key-header_actions [data-testid=stHorizontalBlock] {gap:8px!important;justify-content:flex-end;}
 .st-key-header_actions button {border-radius:999px!important;height:36px;min-height:36px;padding:4px 16px;white-space:nowrap;}
-[data-testid=stDialog] [role=dialog] {border-radius:16px;max-height:calc(100vh - 48px);overflow-y:auto;}
-[data-testid=stPopoverBody] {border-radius:8px;max-width:min(400px,calc(100vw - 32px));max-height:calc(100vh - 48px);overflow:auto;}
+[data-testid=stDialog] [role=dialog] {border-radius:12px;max-height:calc(100vh - 48px);overflow-y:auto;}
+[data-testid=stPopoverBody] {border-radius:12px;max-width:min(400px,calc(100vw - 32px));max-height:calc(100vh - 48px);overflow:auto;}
 [data-testid=stDataFrame] {border:1px solid var(--line);overflow:hidden;}
 @media(max-width:900px) {[data-testid=stMainBlockContainer] {padding:72px 16px 24px;} .st-key-header_actions [data-testid=stHorizontalBlock] {justify-content:flex-start;}}
 @media(prefers-reduced-motion:reduce) {*,*::before,*::after {transition:none!important;animation:none!important;}}
@@ -49,3 +49,13 @@ button:focus-visible,input:focus-visible {outline:2px solid var(--accent);outlin
 [data-testid=stMarkdownContainer] h1 {font-size:28px!important;font-weight:500!important;}
 [data-testid=stMarkdownContainer] h2 {font-size:20px!important;font-weight:500!important;}
 [data-testid=stMarkdownContainer] h3 {font-size:18px!important;font-weight:500!important;}
+
+/* Typography and a single 4px spacing scale. */
+[data-testid=stApp] :is(p,label,input,button,textarea,h1,h2,h3,h4),[data-testid=stCaptionContainer] {font-family:"Product Sans",Arial,sans-serif!important;}
+[data-testid=stMainBlockContainer]>[data-testid=stVerticalBlock] {gap:24px!important;}
+[data-testid=stMainBlockContainer] [data-testid=stLayoutWrapper]:has(.kpi) {margin-top:8px;}
+[data-testid=stSidebar] button p {overflow:hidden;white-space:nowrap;}
+.kpi {padding:24px;}
+.kpi-label {margin-bottom:12px;}
+[data-testid=stDialog] [role=dialog],[data-testid=stPopoverBody] {border-radius:12px!important;}
+@media(prefers-reduced-motion:reduce) {[data-testid=stSidebar] {transition:none!important;}}

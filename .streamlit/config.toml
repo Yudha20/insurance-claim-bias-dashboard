@@ -3,6 +3,6 @@ primaryColor = "#375DFB"
 backgroundColor = "#FAFAFA"
 secondaryBackgroundColor = "#FFFFFF"
 textColor = "#34373C"
-font = "sans serif"
+font = "Product Sans"
 [client]
 showErrorDetails = false
