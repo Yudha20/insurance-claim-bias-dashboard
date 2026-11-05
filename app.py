@@ -56,7 +56,7 @@ st.markdown("""<style>
 :root { --unit:4px; --ink:#20232b; --muted:#667085; --line:#e8ebf0; --accent:#375dfb; }
 [data-testid="stAppViewContainer"] {background:#f8f9fb;}
 [data-testid="stHeader"] {background:rgba(248,249,251,.96);}
-[data-testid="stMainBlockContainer"] {padding:24px 32px 48px;max-width:1600px;}
+[data-testid="stMainBlockContainer"] {padding:80px 32px 48px;max-width:1600px;}
 [data-testid="stSidebar"] {background:#fff;border-right:1px solid var(--line);width:248px!important;}
 [data-testid="stSidebar"] [data-testid="stVerticalBlock"] {gap:16px;}
 [data-testid="stVerticalBlock"] {gap:16px;}
@@ -90,7 +90,7 @@ button:disabled {opacity:.45;cursor:not-allowed!important;}
 [data-testid="stMain"] {animation:arrive .24s ease both;}
 @keyframes arrive {from {opacity:0;transform:translateY(8px)} to {opacity:1;transform:translateY(0)}}
 @media(prefers-reduced-motion:reduce) {*,*::before,*::after {animation:none!important;transition:none!important;scroll-behavior:auto!important;}}
-@media(max-width:768px) {[data-testid="stMainBlockContainer"] {padding:16px 16px 32px;} .kpi {padding:16px;min-height:128px;} .kpi-value {font-size:28px;} .page-title {font-size:20px;} }
+@media(max-width:768px) {[data-testid="stMainBlockContainer"] {padding:72px 16px 32px;} .kpi {padding:16px;min-height:128px;} .kpi-value {font-size:28px;} .page-title {font-size:20px;} }
 </style>""", unsafe_allow_html=True)
 plt.rcParams.update({"axes.spines.top":False,"axes.spines.right":False,
                      "axes.edgecolor":"#E8EBF0","grid.color":"#E8EBF0",
