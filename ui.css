@@ -94,3 +94,21 @@ button:focus-visible,input:focus-visible {outline:2px solid var(--accent);outlin
 .st-key-toggle_rail button:hover {background:#f0f1f3;border:0;}
 
 .st-key-toggle_rail [data-testid=stIconMaterial] {font-size:20px!important;min-width:20px;line-height:20px;}
+
+/* Browser-only navigation: the switch and brand never move or rerun the app. */
+[data-testid=stSidebar] {position:fixed!important;top:0;left:0;bottom:0;width:240px!important;min-width:240px!important;max-width:240px!important;z-index:100;transform:none!important;transition:none!important;}
+[data-testid=stSidebarUserContent] {padding-top:76px!important;}
+[data-testid=stMain] {margin-left:240px;width:calc(100% - 240px);transition:none;}
+#claims-navigation {position:fixed;left:16px;top:20px;width:40px;height:40px;margin:0;opacity:0;z-index:1003;cursor:pointer;}
+.navigation-brand {position:fixed;left:16px;top:20px;height:40px;display:flex;align-items:center;gap:12px;z-index:1002;color:#737780;cursor:pointer;font:13px "Product Sans",sans-serif;}
+.nav-shield,.nav-chevron {display:grid;place-items:center;width:40px;height:40px;font-size:24px;}
+.nav-chevron {display:none;}
+#claims-navigation:hover + .navigation-brand .nav-shield {display:none;}
+#claims-navigation:hover + .navigation-brand .nav-chevron {display:grid;}
+#claims-navigation:focus-visible + .navigation-brand {outline:2px solid #365cff;outline-offset:4px;border-radius:12px;}
+[data-testid=stApp]:has(#claims-navigation:not(:checked)) [data-testid=stSidebar] {visibility:hidden;pointer-events:none;}
+[data-testid=stApp]:has(#claims-navigation:not(:checked)) [data-testid=stMain] {margin-left:0;width:100%;}
+[data-testid=stApp]:has(#claims-navigation:not(:checked)) .nav-brand-name {display:none;}
+[data-testid=stApp]:has(#claims-navigation:not(:checked)) .page-title,
+[data-testid=stApp]:has(#claims-navigation:not(:checked)) .page-subtitle {padding-left:48px;}
+[data-testid=stElementContainer]:has(#claims-navigation) {height:0;min-height:0;margin:0;}

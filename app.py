@@ -218,17 +218,9 @@ def download_feedback():
 if st.session_state.pop("settings_saved", False):
     st.toast("Settings applied.", icon=":material/check:")
 
-if "nav_pinned" not in st.session_state: st.session_state.nav_pinned = True
 if "active_view" not in st.session_state: st.session_state.active_view = "Claims"
-compact = not st.session_state.nav_pinned
-rail_width = 0 if compact else 240
-st.markdown("<style>[data-testid=stSidebar]{width:%dpx!important;min-width:%dpx!important;max-width:%dpx!important;}</style>" % (rail_width,rail_width,rail_width), unsafe_allow_html=True)
-if compact:
-    st.markdown("<style>[data-testid=stSidebar]{display:none!important;}</style>", unsafe_allow_html=True)
-else:
-    if st.sidebar.button("ClaimScope", icon=":material/shield:", key="toggle_rail", width="stretch"):
-        st.session_state.nav_pinned = False
-        st.rerun()
+# Native checkbox changes layout immediately in the browser; no Python rerun.
+st.markdown('<input type="checkbox" id="claims-navigation" checked aria-label="Show navigation" role="switch">\n<label for="claims-navigation" class="navigation-brand"><span class="nav-shield"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3 4 6v6c0 5 8 9 8 9s8-4 8-9V6l-8-3Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg></span><span class="nav-chevron">›</span><span class="nav-brand-name">ClaimScope</span></label>', unsafe_allow_html=True)
 nav = [("Claims", "table_view", "Search, filter, and export claim records"),
        ("Overview", "space_dashboard", "Compare outcomes across policyholder groups"),
        ("Disparities", "query_stats", "Explore differences and income distribution"),
@@ -236,21 +228,14 @@ nav = [("Claims", "table_view", "Search, filter, and export claim records"),
        ("Models", "account_tree", "Train and compare four classifiers"),
        ("Evaluation", "monitoring", "Inspect ROC curves and prediction errors"),
        ("Findings", "description", "Review dataset findings and audit next steps")]
-for name, icon, detail in ([] if compact else nav):
-    if st.sidebar.button("" if compact else name, icon=f":material/{icon}:", key="nav_" + name,
+for name, icon, detail in nav:
+    if st.sidebar.button(name, icon=f":material/{icon}:", key="nav_" + name,
                          type="primary" if st.session_state.active_view == name else "secondary", width="stretch"):
         st.session_state.active_view = name
         st.rerun()
 view = st.session_state.active_view
 
-if compact:
-    brand, head, actions = st.columns([0.08, 1.12, 1], gap="small", vertical_alignment="center")
-    with brand:
-        if st.button("", icon=":material/shield:", key="toggle_rail", width="content"):
-            st.session_state.nav_pinned = True
-            st.rerun()
-else:
-    head, actions = st.columns([1.2, 1], gap="small", vertical_alignment="center")
+head, actions = st.columns([1.2, 1], gap="small", vertical_alignment="center")
 with head:
     st.markdown('<div class="page-title">Insurance claims dashboard</div><div class="page-subtitle">Review outcomes, explore disparities, and evaluate predictive models.</div>', unsafe_allow_html=True)
 with actions:
