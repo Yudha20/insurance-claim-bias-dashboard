@@ -24,7 +24,8 @@ import streamlit as st
 import motion
 
 # Show the skeleton before the slow imports below. Otherwise Streamlit draws its
-# generic placeholder while scikit-learn loads.
+# generic placeholder while they load. altair, scipy and scikit-learn are imported
+# inside the functions that use them, so the first page does not wait for them.
 st.set_page_config(page_title="ClaimScope · Insurance analytics", layout="wide",
                    initial_sidebar_state="expanded")
 NAV_VIEWS = ["Claims", "Overview", "Disparities", "Data preparation", "Models", "Evaluation", "Findings"]
@@ -34,21 +35,9 @@ st.html(motion.motion_script(), unsafe_allow_javascript=True)
 
 import io
 import html
+import threading
 import numpy as np
 import pandas as pd
-import altair as alt
-from scipy.stats import chi2_contingency
-from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler, OneHotEncoder
-from sklearn.compose import ColumnTransformer
-from sklearn.pipeline import Pipeline
-from sklearn.impute import SimpleImputer
-from sklearn.neighbors import KNeighborsClassifier
-from sklearn.tree import DecisionTreeClassifier
-from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
-from sklearn.metrics import (accuracy_score, precision_score, recall_score, f1_score,
-                             roc_auc_score, confusion_matrix, roc_curve,
-                             classification_report)
 
 # ----------------------------------------------------------------------------
 @st.cache_data(show_spinner=False)
@@ -59,6 +48,8 @@ def product_font_css():
         faces.append(f"@font-face{{font-family:'Product Sans';font-style:{style};font-weight:{weight};font-display:swap;src:url(data:font/ttf;base64,{data}) format('truetype');}}")
     return "".join(faces)
 st.markdown("<style>" + product_font_css() + "</style>", unsafe_allow_html=True)
+
+DEFAULT_MODEL_CONFIG = dict(test_size=.25, seed=42, zone_top=15, state_top=15, occ_top=12, reason_top=12)
 
 def mark_rendered():
     """Tell the browser this script run has finished drawing the page."""
@@ -94,6 +85,7 @@ def interval_label(interval):
 
 def rate_chart(g, overall, horizontal=True):
     """Repudiation rate per group from a frame with mean/count, in display order, against the overall rate."""
+    import altair as alt
     if g.empty:
         st.info("No groups meet this threshold. Lower it to see results.")
         return
@@ -133,6 +125,7 @@ def rate_chart(g, overall, horizontal=True):
 
 def value_bars(labels, values, value_title, fmt=",.0f", groups=None):
     """Ranked horizontal bars, drawn top-down in the order given; groups maps group name to colour."""
+    import altair as alt
     data = pd.DataFrame({"Item": [str(x) for x in labels], "Value": [float(x) for x in values]})
     if data.empty:
         st.info("Nothing to chart for this selection.")
@@ -151,6 +144,7 @@ def value_bars(labels, values, value_title, fmt=",.0f", groups=None):
     show_chart((bars + text).properties(height=30 * len(data) + (90 if groups else 60)))
 
 def roc_chart(results):
+    import altair as alt
     names = {name: f"{name} (AUC={r['roc_auc']:.3f})" for name, r in results.items()}
     data = pd.concat([pd.DataFrame({"Model": names[name], "FPR": r["roc"][0], "TPR": r["roc"][1]})
                       for name, r in results.items()], ignore_index=True)
@@ -172,6 +166,7 @@ def roc_chart(results):
     show_chart((chance + lines + targets + marker).properties(height=440))
 
 def metric_chart(results):
+    import altair as alt
     labels = {"test_acc": "Test Acc", "precision": "Precision", "recall": "Recall", "f1": "F1", "roc_auc": "ROC-AUC"}
     data = pd.DataFrame([{"Model": name, "Metric": label, "Score": r[key]}
                          for name, r in results.items() for key, label in labels.items()])
@@ -185,6 +180,7 @@ def metric_chart(results):
 
 def confusion_chart(name, r, largest):
     """Two-by-two matrix; every matrix shares one colour scale so they compare directly."""
+    import altair as alt
     cm, classes = r["cm"], ["Approve", "Repudiate"]
     data = pd.DataFrame([{"Actual": classes[a], "Predicted": classes[b], "Claims": int(cm[a, b]),
                           "Share": cm[a, b] / max(cm.sum(), 1)} for a in range(2) for b in range(2)])
@@ -340,6 +336,10 @@ def build_design_matrix(df: pd.DataFrame, zone_top, state_top, occ_top, reason_t
 
 
 def make_preprocessor(num, cat):
+    from sklearn.compose import ColumnTransformer
+    from sklearn.impute import SimpleImputer
+    from sklearn.pipeline import Pipeline
+    from sklearn.preprocessing import OneHotEncoder, StandardScaler
     return ColumnTransformer([
         ("num", Pipeline([("imp", SimpleImputer(strategy="median")),
                           ("sc", StandardScaler())]), num),
@@ -348,10 +348,18 @@ def make_preprocessor(num, cat):
     ])
 
 
-@st.cache_resource(show_spinner=True)
-def train_models(_X, _y, num, cat, test_size, seed):
-    Xtr, Xte, ytr, yte = train_test_split(_X, _y, test_size=test_size,
-                                          stratify=_y, random_state=seed)
+# X and y are part of the cache key, so each dataset and set of category limits trains its own models.
+@st.cache_resource(show_spinner=True, max_entries=8)
+def train_models(X, y, num, cat, test_size, seed):
+    from sklearn.ensemble import GradientBoostingClassifier, RandomForestClassifier
+    from sklearn.metrics import (accuracy_score, classification_report, confusion_matrix, f1_score,
+                                 precision_score, recall_score, roc_auc_score, roc_curve)
+    from sklearn.model_selection import train_test_split
+    from sklearn.neighbors import KNeighborsClassifier
+    from sklearn.pipeline import Pipeline
+    from sklearn.tree import DecisionTreeClassifier
+    Xtr, Xte, ytr, yte = train_test_split(X, y, test_size=test_size,
+                                          stratify=y, random_state=seed)
     pre = make_preprocessor(num, cat)
     models = {
         "KNN": KNeighborsClassifier(n_neighbors=15),
@@ -384,6 +392,7 @@ def train_models(_X, _y, num, cat, test_size, seed):
 
 
 def cramers_v(df, col, target="REPUDIATED"):
+    from scipy.stats import chi2_contingency
     ct = pd.crosstab(df[col], df[target])
     chi2, p, dof, _ = chi2_contingency(ct)
     n = ct.to_numpy().sum(); r, k = ct.shape
@@ -441,7 +450,7 @@ except (ValueError, OSError, UnicodeError, pd.errors.ParserError) as exc:
     mark_rendered()
     st.stop()
 if "model_config" not in st.session_state:
-    st.session_state.model_config = dict(test_size=.25, seed=42, zone_top=15, state_top=15, occ_top=12, reason_top=12)
+    st.session_state.model_config = dict(DEFAULT_MODEL_CONFIG)
 
 def close_model_settings():
     st.session_state.settings_open = False
@@ -817,3 +826,20 @@ with st.container(key="page_view"):
                "validate against documented repudiation grounds before acting.")
 
 mark_rendered()
+
+def warm_up_models():
+    """Train the default models early, so the first Models visit does not wait for them."""
+    c = DEFAULT_MODEL_CONFIG
+    try:
+        sample, _ = load_and_engineer(None)
+        X, y, num, cat = build_design_matrix(sample, c["zone_top"], c["state_top"], c["occ_top"], c["reason_top"])
+        train_models(X, y, num, cat, c["test_size"], c["seed"])
+    except Exception:
+        pass  # The Models page trains on demand if this fails.
+
+@st.cache_resource(show_spinner=False)
+def start_model_warm_up():
+    """Runs once per server process, after the first page has already been sent."""
+    threading.Thread(target=warm_up_models, daemon=True).start()
+
+start_model_warm_up()

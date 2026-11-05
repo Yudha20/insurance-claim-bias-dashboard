@@ -141,12 +141,12 @@
       return;
     }
     elements.forEach((el, i) => {
-      const delay = Math.min(i, 7) * 34;
+      const delay = Math.min(i, 7) * 20;
       play(el, [
         { transform: "translateY(" + direction * distance + "px) scale(.972)" },
         { transform: "none" },
       ], { duration: 950, delay, easing: SPRING, fill: "backwards" });
-      play(el, [{ opacity: 0 }, { opacity: 1 }], { duration: 240, delay, easing: "ease-out", fill: "backwards" });
+      play(el, [{ opacity: 0 }, { opacity: 1 }], { duration: 160, delay, easing: "ease-out", fill: "backwards" });
     });
   }
 
@@ -156,7 +156,7 @@
     const animation = play(body, [
       { opacity: 1, transform: "none", filter: "blur(0)" },
       { opacity: 0, transform: "translateY(" + direction * -12 + "px) scale(.982)", filter: "blur(3px)" },
-    ], { duration: 170, easing: "cubic-bezier(.4,0,1,1)", fill: "forwards" });
+    ], { duration: 110, easing: "cubic-bezier(.4,0,1,1)", fill: "forwards" });
     // Hold first, then cancel: the exit's held end state must not outlive the exit.
     animation.finished.then(() => { then(); animation.cancel(); }, () => {});
   }
@@ -164,21 +164,21 @@
   const visibleChildren = (el) => (el ? Array.from(el.children).filter((child) => child.offsetHeight > 0) : []);
 
   // Charts and tables finish drawing after their elements arrive.
+  // Elements in a hidden tab never draw, so only visible ones count.
   function contentDrawn() {
     const body = page();
     if (!body) return true;
-    if ($('[data-testid="stSkeleton"],[data-testid="stSkeletonElement"]', body)) return false;
-    const charts = Array.from(body.querySelectorAll('[data-testid="stVegaLiteChart"]'));
-    if (charts.some((chart) => !$("svg,canvas", chart))) return false;
-    const tables = Array.from(body.querySelectorAll('[data-testid="stDataFrame"]'));
-    return !tables.some((table) => !$("canvas", table));
+    const shown = (selector) => Array.from(body.querySelectorAll(selector)).filter((el) => el.offsetHeight > 0);
+    if (shown('[data-testid="stSkeleton"],[data-testid="stSkeletonElement"]').length) return false;
+    if (shown('[data-testid="stVegaLiteChart"]').some((chart) => !$("svg,canvas", chart))) return false;
+    return !shown('[data-testid="stDataFrame"]').some((table) => !$("canvas", table));
   }
 
   // ---------- Page change: leave, hold, reveal ----------
-  const SKELETON_DELAY = 90;
-  const SKELETON_MIN = 260;
+  const SKELETON_DELAY = 180;
+  const SKELETON_MIN = 120;
   const HARD_LIMIT = 30000;
-  const DRAW_LIMIT = 1500;
+  const DRAW_LIMIT = 200;
   let pending = null;
   let poll = 0;
 
@@ -198,7 +198,7 @@
     if (!el) return;
     const finish = () => el.classList.remove("is-on");
     if (reduced()) { finish(); return; }
-    el.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 200, easing: "ease-out" }).finished.then(finish, finish);
+    el.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 120, easing: "ease-out" }).finished.then(finish, finish);
   }
 
   function isReady() {
@@ -272,6 +272,32 @@
     if (slug) go(slug);
   }, true);
 
+  // ---------- KPI count-up: on each page load, from zero to the real value ----------
+  function countUp() {
+    if (reduced()) return;
+    Array.from(document.querySelectorAll(".kpi-value")).forEach((el, i) => {
+      const finalText = el.textContent;
+      const match = /^([0-9,]+)(\.[0-9]+)?(.*)$/.exec(finalText.trim());
+      if (!match) return;
+      const decimals = match[2] ? match[2].length - 1 : 0;
+      const target = parseFloat(match[1].replace(/,/g, "") + (match[2] || ""));
+      const format = (value) => value.toLocaleString("en-US", { minimumFractionDigits: decimals, maximumFractionDigits: decimals }) + match[3];
+      const start = performance.now() + 120 + i * 70;
+      const duration = 1400;
+      let written = format(0);
+      el.textContent = written;
+      const frame = (now) => {
+        // A rerun replaced this value, so the new one stands.
+        if (el.textContent !== written) return;
+        const progress = Math.min(1, Math.max(0, (now - start) / duration));
+        written = progress === 1 ? finalText : format(target * (1 - Math.pow(1 - progress, 4)));
+        el.textContent = written;
+        if (progress !== 1) requestAnimationFrame(frame);
+      };
+      requestAnimationFrame(frame);
+    });
+  }
+
   // ---------- First paint ----------
   const bootStart = performance.now();
   let renderedAt = 0;
@@ -286,8 +312,9 @@
     clearInterval(bootPoll);
     paintActive(currentSlug());
     movePill(currentSlug(), true);
+    countUp();
     root.classList.add("cs-ready");
-    setTimeout(() => root.classList.add("cs-booted"), 360);
+    setTimeout(() => root.classList.add("cs-booted"), 220);
     const frame = $('[data-testid="stMainBlockContainer"] > [data-testid="stVerticalBlock"]');
     const chrome = frame ? visibleChildren(frame).filter((el) => !el.contains(page() || null)) : [];
     enter(chrome.concat(visibleChildren(page())), 1, 12);

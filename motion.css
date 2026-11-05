@@ -58,12 +58,12 @@ html.cs-hold .st-key-page_view {opacity:0!important;pointer-events:none;}
 .sk-kpi {height:144px;min-height:144px;}
 .sk-kpi:hover {box-shadow:none;border-color:var(--line);}
 .sk-kpi-note {display:flex;align-items:center;gap:8px;margin-top:10px;}
-html.cs-ready .cs-boot {pointer-events:none;animation:cs-boot-out .34s cubic-bezier(.3,0,.2,1) forwards;}
+html.cs-ready .cs-boot {pointer-events:none;animation:cs-boot-out .2s cubic-bezier(.3,0,.2,1) forwards;}
 html.cs-booted .cs-boot {display:none;}
 @keyframes cs-boot-out {to {opacity:0;visibility:hidden;}}
 /* Without JavaScript the overlay still clears once the page has rendered. */
-[data-testid=stApp]:has(#cs-rendered) .cs-boot {animation:cs-boot-out .3s 5s forwards;}
-html.cs-ready [data-testid=stApp]:has(#cs-rendered) .cs-boot {animation:cs-boot-out .34s cubic-bezier(.3,0,.2,1) forwards;}
+[data-testid=stApp]:has(#cs-rendered) .cs-boot {animation:cs-boot-out .2s 3s forwards;}
+html.cs-ready [data-testid=stApp]:has(#cs-rendered) .cs-boot {animation:cs-boot-out .2s cubic-bezier(.3,0,.2,1) forwards;}
 @media(prefers-reduced-motion:reduce) {[data-testid=stApp]:has(#cs-rendered) .cs-boot {display:none;}}
 
 @media(max-width:900px) {
@@ -85,12 +85,11 @@ html.cs-ready [data-testid=stApp]:has(#cs-rendered) .cs-boot {animation:cs-boot-
 
 /* ---------- Liquid-glass navigation pill ---------- */
 html.cs-js [data-testid=stSidebarUserContent] {position:relative;}
-.cs-pill {position:absolute;top:0;left:0;z-index:0;pointer-events:none;box-sizing:border-box;border-radius:14px;transform-origin:50% 50%;will-change:transform;
-  background:linear-gradient(145deg,#ffffffd9 0%,#ffffff4d 46%,#e6ebff73 100%),#365cff1a;
-  -webkit-backdrop-filter:blur(10px) saturate(180%);backdrop-filter:blur(10px) saturate(180%);
-  border:1px solid #ffffffb3;
-  box-shadow:0 1px 2px #2c344814,0 6px 18px #365cff24,inset 0 1px 0 #ffffffe6,inset 0 -1px 1px #365cff1a;}
-.cs-pill::after {content:'';position:absolute;left:8%;right:8%;top:2px;height:38%;border-radius:12px 12px 50% 50%;background:linear-gradient(180deg,#ffffffb3,#fff0);pointer-events:none;}
+/* One glass, shared by the active nav item and Export claims. No rim: a hard shadow or
+   inner highlight at the edge reads as a stroke, so the only shadow is a wide, soft glow. */
+[data-testid=stApp] {--cs-glass-bg:radial-gradient(120% 100% at 28% 0%,#ffffffb8 0%,#fff0 62%),#365cff1a;--cs-glass-shadow:0 8px 24px #365cff24;--cs-glass-shadow-hover:0 10px 30px #365cff38;--cs-glass-blur:blur(10px) saturate(180%);}
+.cs-pill {position:absolute;top:0;left:0;z-index:0;pointer-events:none;box-sizing:border-box;border-radius:999px;transform-origin:50% 50%;will-change:transform;
+  background:var(--cs-glass-bg);-webkit-backdrop-filter:var(--cs-glass-blur);backdrop-filter:var(--cs-glass-blur);box-shadow:var(--cs-glass-shadow);}
 html.cs-js [data-testid=stSidebarUserContent] [data-testid=stElementContainer] {position:relative;z-index:1;}
 html.cs-js [data-testid=stSidebarUserContent] button[kind=primary]::before {display:none;}
 html.cs-js [data-testid=stSidebarUserContent] button,
@@ -103,3 +102,16 @@ html.cs-js [data-testid=stSidebarUserContent] button[kind=primary] p {font-weigh
 [data-testid=stSidebarUserContent] button:active,
 .st-key-header_actions button:active {transform:scale(.96);transition-duration:.08s!important;}
 .st-key-header_actions button {transition:background .12s,border-color .12s,transform .5s var(--cs-spring,cubic-bezier(.34,1.4,.64,1));}
+
+/* ---------- Buttons: no outer stroke. Unfilled ones lift off the page with a soft shadow. ---------- */
+[data-testid=stApp] button,[data-testid=stApp] button:hover,[data-testid=stApp] button:focus,[data-testid=stApp] button:active,
+[role=dialog] button,[data-testid=stPopoverBody] button {border:0!important;}
+.st-key-header_actions [data-testid=stPopover] button,.st-key-header_actions [data-testid=stButton] button,
+[data-testid=stMain] .st-key-page_view [data-testid=stDownloadButton] button,[data-testid=stPopoverBody] [data-testid=stDownloadButton] button {background:#fff!important;box-shadow:0 6px 18px #2c344814;}
+.st-key-header_actions [data-testid=stPopover] button:hover,.st-key-header_actions [data-testid=stButton] button:hover,
+[data-testid=stMain] .st-key-page_view [data-testid=stDownloadButton] button:hover,[data-testid=stPopoverBody] [data-testid=stDownloadButton] button:hover {filter:none;box-shadow:0 8px 24px #2c344824;}
+
+/* ---------- Export claims: the same glass as the active navigation item ---------- */
+.st-key-header_actions [data-testid=stDownloadButton] button {color:var(--accent)!important;background:var(--cs-glass-bg)!important;-webkit-backdrop-filter:var(--cs-glass-blur);backdrop-filter:var(--cs-glass-blur);box-shadow:var(--cs-glass-shadow)!important;}
+.st-key-header_actions [data-testid=stDownloadButton] button p {color:inherit!important;font-weight:700!important;}
+.st-key-header_actions [data-testid=stDownloadButton] button:hover {filter:none;box-shadow:var(--cs-glass-shadow-hover)!important;}
