@@ -47,7 +47,7 @@ st.set_page_config(page_title="ClaimScope · Insurance analytics", layout="wide"
 NAVY, RED, GREEN, ORANGE, GREY = "#375DFB", "#C25263", "#23876C", "#8798DC", "#778196"
 ACCENT = [NAVY, RED, GREEN, ORANGE]
 plt.rcParams.update({"axes.grid": True, "grid.alpha": 0.25, "axes.axisbelow": True,
-                     "font.size": 9})
+                     "font.size": 12})
 
 # Visual thesis: quiet white surfaces, precise type, and a single cobalt action color.
 # Content plan: navigation, portfolio metrics, searchable claims, analytical detail.
@@ -67,15 +67,15 @@ p, label {font-size:14px!important;line-height:1.6!important;}
 [data-testid="stCaptionContainer"] {color:var(--muted);}
 .brand {display:flex;align-items:center;gap:12px;font-size:24px;font-weight:700;letter-spacing:-1px;padding:0 0 20px;border-bottom:1px solid var(--line);}
 .brand-mark {background:#20232b;color:white;border-radius:12px;display:grid;place-items:center;width:40px;height:40px;font-size:24px;}
-.eyebrow {font-size:11px;color:#697386;font-weight:600;letter-spacing:1.2px;text-transform:uppercase;margin:4px 0 8px;}
+.eyebrow {font-size:12px;color:#697386;font-weight:600;letter-spacing:1.2px;text-transform:uppercase;margin:4px 0 8px;}
 .page-title {font-size:24px;font-weight:650;letter-spacing:-.8px;line-height:32px;margin:0;}
 .page-subtitle {font-size:13px;color:#667085;margin:4px 0 0;}
-.kpi {background:white;border:1px solid var(--line);border-radius:16px;padding:20px 24px;min-height:148px;animation:arrive .32s ease both;transition:border-color .16s,transform .16s;}
-.kpi:hover {border-color:#b7c5fb;transform:translateY(-2px);}
+.kpi {background:white;border:1px solid var(--line);border-radius:16px;padding:20px 24px;min-height:148px;animation:arrive .32s ease both;transition:border-color .16s,transform .16s,box-shadow .16s;}
+.kpi:hover {border-color:#dce2ef;transform:translateY(-2px);box-shadow:0 4px 16px rgba(44,52,72,.07);}
 .kpi-label {font-size:13px;color:#667085;margin-bottom:12px;}
 .kpi-value {font-size:32px;line-height:40px;font-weight:600;letter-spacing:-1px;font-variant-numeric:tabular-nums;}
 .kpi-note {font-size:12px;color:#667085;margin-top:8px;}
-.kpi-tag {display:inline-block;background:#edf2ff;color:#3455bc;font-size:11px;border-radius:6px;padding:0 8px;vertical-align:middle;letter-spacing:0;margin-left:8px;}
+.kpi-tag {display:inline-block;background:#edf2ff;color:#3455bc;font-size:12px;border-radius:6px;padding:0 8px;vertical-align:middle;letter-spacing:0;margin-left:8px;}
 [data-testid="stDataFrame"] {border:1px solid var(--line);border-radius:12px;overflow:hidden;}
 [data-testid="stBaseButton-segmented_control"],button {transition:background .16s,border-color .16s,box-shadow .16s!important;}
 button:hover {border-color:#8ca3ff!important;}
@@ -127,6 +127,10 @@ input,[data-baseweb="select"]>div {border-radius:8px!important;}
 [data-testid="stVerticalBlockBorderWrapper"]>div {border-color:#eeeef0!important;border-radius:20px!important;background:#fff;}
 @media(max-width:768px) {[data-testid="stMainBlockContainer"] {padding:80px 16px 32px;} [data-testid="stSidebar"] {min-width:80px!important;} .kpi {padding:16px;}}
 @media(prefers-reduced-motion:reduce) {*,*::before,*::after {transition:none!important;animation:none!important;}}
+[data-testid="stApp"] p,[data-testid="stApp"] label,[data-testid="stApp"] small,
+[data-testid="stCaptionContainer"], [data-testid="stTooltipContent"],input,button,
+[data-baseweb="select"],.eyebrow,.kpi-tag,.kpi-note {font-size: max(12px, 0.75rem)!important;}
+[data-testid="stVerticalBlockBorderWrapper"]>div {padding:24px!important;}
 </style>""", unsafe_allow_html=True)
 plt.rcParams.update({"axes.spines.top":False,"axes.spines.right":False,
                      "axes.edgecolor":"#E8EBF0","grid.color":"#E8EBF0",
@@ -325,7 +329,10 @@ with head:
     st.markdown('<div class="page-title">Insurance claims dashboard</div><div class="page-subtitle">Review outcomes, explore disparities, and evaluate predictive models.</div>', unsafe_allow_html=True)
 with action:
     st.download_button("Export claims", df.to_csv(index=False).encode(), "claims.csv", "text/csv", type="primary", icon=":material/download:", width="stretch")
-st.caption(("Uploaded dataset · " + up.name) if up else "Bundled sample · 1,790 insurance claims")
+with st.popover("", icon=":material/database:", help="Data source and record count"):
+    st.write("Uploaded dataset" if up else "Bundled sample")
+    if up: st.caption(up.name)
+    st.caption(f"{len(df):,} insurance claims · {len(df.columns)} fields")
 overall = df["REPUDIATED"].mean()
 for i, (col, label, value, tag, note) in enumerate(zip(st.columns(4),
     ["Total claims", "Approved claims", "Repudiated claims", "Income recorded"],
@@ -336,8 +343,8 @@ for i, (col, label, value, tag, note) in enumerate(zip(st.columns(4),
 st.divider()
 if view == "Claims":
     with st.container(border=True):
-        st.subheader("Claim records")
-        st.caption("Search policyholders or policies, filter outcomes, and export the matching records.")
+        st.subheader("Claim records", icon=":material/table_view:")
+        st.caption("Find a policyholder or policy, narrow the list, then export the matching claims.")
         search_col, status_col, state_col = st.columns([2, 1, 1])
         query = search_col.text_input("Search claims", placeholder="Name or policy number…")
         status = status_col.selectbox("Outcome", ["All outcomes", "Approved Death Claim", "Repudiate Death"])
@@ -389,7 +396,7 @@ if view == "Overview":
     ax.barh(g.index.astype(str), g["mean"] * 100, color=colors)
     ax.axvline(overall * 100, color=NAVY, ls="--", lw=1.4, label=f"Overall {overall*100:.0f}%")
     for i, (m, n) in enumerate(zip(g["mean"], g["count"])):
-        ax.text(m * 100 + 0.4, i, f"{m*100:.0f}% (n={n})", va="center", fontsize=8)
+        ax.text(m * 100 + 0.4, i, f"{m*100:.0f}% (n={n})", va="center", fontsize=12)
     ax.set_xlabel("Repudiation %"); ax.legend(); ax.set_title(f"Repudiation rate by {sel}")
     st.pyplot(fig, width='stretch')
 
@@ -428,7 +435,7 @@ if view == "Disparities":
     bar_colors = [GREY if "—" in s else NAVY for s in a2["significant (p<0.05)"]]
     ax.barh(a2["Factor"], a2["Cramér's V"], color=bar_colors)
     for i, v in enumerate(a2["Cramér's V"]):
-        ax.text(v + 0.004, i, f"{v:.3f}", va="center", fontsize=8)
+        ax.text(v + 0.004, i, f"{v:.3f}", va="center", fontsize=12)
     ax.set_xlabel("Cramér's V (effect size)")
     st.pyplot(fig, width='stretch')
 
@@ -465,7 +472,7 @@ if view == "Disparities":
         ax.bar(g.index.astype(str), g["mean"] * 100, color=NAVY)
         ax.axhline(overall * 100, color=RED, ls="--", lw=1.3)
         for i, (m, n) in enumerate(zip(g["mean"], g["count"])):
-            ax.text(i, m*100+0.6, f"{m*100:.0f}%\nn={n}", ha="center", fontsize=8)
+            ax.text(i, m*100+0.6, f"{m*100:.0f}%\nn={n}", ha="center", fontsize=12)
         ax.set_ylabel("Repudiation %")
         st.pyplot(fig, width='stretch')
 
@@ -481,7 +488,7 @@ if view == "Disparities":
             ax.bar(g.index.astype(str), g["mean"] * 100, color=ORANGE)
             ax.axhline(overall * 100, color=RED, ls="--", lw=1.3)
             for i, (m, n) in enumerate(zip(g["mean"], g["count"])):
-                ax.text(i, m*100+0.6, f"{m*100:.0f}%\nn={n}", ha="center", fontsize=8)
+                ax.text(i, m*100+0.6, f"{m*100:.0f}%\nn={n}", ha="center", fontsize=12)
             ax.set_ylabel("Repudiation %")
             st.pyplot(fig, width='stretch')
 
@@ -586,7 +593,7 @@ if view == "Evaluation":
     xx = np.arange(len(labels)); w = 0.2
     for i, ((name, r), c) in enumerate(zip(results.items(), ACCENT)):
         ax.bar(xx + i*w - 1.5*w, [r[m] for m in mets], w, label=name, color=c)
-    ax.set_xticks(xx); ax.set_xticklabels(labels); ax.set_ylim(0, 1); ax.legend(ncol=2, fontsize=8)
+    ax.set_xticks(xx); ax.set_xticklabels(labels); ax.set_ylim(0, 1); ax.legend(ncol=2, fontsize=12)
     st.pyplot(fig, width='stretch')
 
     st.subheader("Confusion matrices (test set)")
@@ -604,7 +611,7 @@ if view == "Evaluation":
             ax.set_xticklabels(["Pred Approve", "Pred Repud"])
             ax.set_yticklabels(["Act Approve", "Act Repud"]); ax.grid(False)
             ax.set_title(f"{name}\nacc={r['test_acc']:.2f} · recall={r['recall']:.2f}",
-                         fontsize=9)
+                         fontsize=12)
             st.pyplot(fig, width='stretch')
 
     # feature importance (RF)
