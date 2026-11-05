@@ -69,8 +69,8 @@ button:focus-visible,input:focus-visible {outline:2px solid var(--accent);outlin
 [data-testid=stTextInput]:focus-within>div>div {border-color:#365cff;}
 [data-testid=stSidebar] button {color:#92969d;}
 [data-testid=stSidebar] button[kind=primary] {color:#365cff;}
-.st-key-toggle_rail button:hover [data-testid=stIconMaterial] {font-size:0!important;}
-.st-key-toggle_rail button:hover [data-testid=stIconMaterial]::after {content:'›';font-family:"Product Sans",sans-serif;font-size:24px;line-height:20px;}
+.st-key-toggle_rail button:hover [data-testid=stIconMaterial] {color:transparent;position:relative;}
+.st-key-toggle_rail button:hover [data-testid=stIconMaterial]::after {position:absolute;inset:0;color:#34373c;content:'›';font-family:"Product Sans",sans-serif;font-size:24px;line-height:20px;}
 [data-testid=stMain], [data-testid=stMainBlockContainer], [data-testid=stColumn] {min-width:0;}
 [data-testid=stDataFrame] {max-width:100%;overflow:hidden;}
 [data-testid=stToast] {font-family:"Product Sans",sans-serif;font-size:13px;border-radius:12px;}
@@ -79,3 +79,7 @@ button:focus-visible,input:focus-visible {outline:2px solid var(--accent);outlin
 .react-aria-ComboBox [role=group]:focus-within {border-color:#365cff!important;}
 .react-aria-ComboBox input {border:0!important;outline:none!important;box-shadow:none!important;background:transparent!important;border-radius:0!important;}
 .react-aria-ComboBox button,.react-aria-ComboBox button:hover,.react-aria-ComboBox button:active {border:0!important;outline:none!important;box-shadow:none!important;background:transparent!important;filter:none!important;min-height:0!important;border-radius:0!important;}
+
+/* All reading and input text meets the 12px floor. */
+[data-testid=stApp] :is(p,label,input,textarea,button,small,code,pre),[data-testid=stCaptionContainer],[role=option] {font-size:max(12px,.8125rem)!important;}
+[data-testid=stApp] small,[data-testid=stCaptionContainer] p {font-size:12px!important;}

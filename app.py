@@ -49,6 +49,16 @@ from sklearn.metrics import (accuracy_score, precision_score, recall_score, f1_s
 st.set_page_config(page_title="ClaimScope · Insurance analytics", layout="wide",
                    initial_sidebar_state="expanded")
 
+@st.cache_data(show_spinner=False)
+def product_font_css():
+    faces = []
+    for filename, weight, style in [("regular",400,"normal"),("bold",700,"normal"),("italic",400,"italic"),("bold-italic",700,"italic")]:
+        data = base64.b64encode((Path(__file__).parent / "assets" / "fonts" / (filename + ".ttf")).read_bytes()).decode()
+        faces.append(f"@font-face{{font-family:'Product Sans';font-style:{style};font-weight:{weight};font-display:swap;src:url(data:font/ttf;base64,{data}) format('truetype');}}")
+    return "".join(faces)
+st.markdown("<style>" + product_font_css() + Path(__file__).with_name("ui.css").read_text() + "</style>", unsafe_allow_html=True)
+
+
 NAVY, RED, GREEN, ORANGE, GREY = "#375DFB", "#C25263", "#23876C", "#8798DC", "#778196"
 ACCENT = [NAVY, RED, GREEN, ORANGE]
 plt.rcParams.update({"axes.grid": True, "grid.alpha": 0.25, "axes.axisbelow": True,
@@ -208,7 +218,7 @@ def download_feedback():
 if st.session_state.pop("settings_saved", False):
     st.toast("Settings applied.", icon=":material/check:")
 
-if "nav_pinned" not in st.session_state: st.session_state.nav_pinned = False
+if "nav_pinned" not in st.session_state: st.session_state.nav_pinned = True
 if "active_view" not in st.session_state: st.session_state.active_view = "Claims"
 compact = not st.session_state.nav_pinned
 rail_width = 64 if compact else 240
@@ -223,20 +233,12 @@ nav = [("Claims", "table_view", "Search, filter, and export claim records"),
        ("Models", "account_tree", "Train and compare four classifiers"),
        ("Evaluation", "monitoring", "Inspect ROC curves and prediction errors"),
        ("Findings", "description", "Review dataset findings and audit next steps")]
-for name, icon, detail in nav:
+for name, icon, detail in ([] if compact else nav):
     if st.sidebar.button("" if compact else name, icon=f":material/{icon}:", key="nav_" + name,
                          type="primary" if st.session_state.active_view == name else "secondary", width="stretch"):
         st.session_state.active_view = name
         st.rerun()
 view = st.session_state.active_view
-@st.cache_data(show_spinner=False)
-def product_font_css():
-    faces = []
-    for filename, weight, style in [("regular",400,"normal"),("bold",700,"normal"),("italic",400,"italic"),("bold-italic",700,"italic")]:
-        data = base64.b64encode((Path(__file__).parent / "assets" / "fonts" / (filename + ".ttf")).read_bytes()).decode()
-        faces.append(f"@font-face{{font-family:'Product Sans';font-style:{style};font-weight:{weight};font-display:swap;src:url(data:font/ttf;base64,{data}) format('truetype');}}")
-    return "".join(faces)
-st.markdown("<style>" + product_font_css() + Path(__file__).with_name("ui.css").read_text() + "</style>", unsafe_allow_html=True)
 
 head, actions = st.columns([1.2, 1], gap="small", vertical_alignment="center")
 with head:
@@ -409,7 +411,7 @@ if view == "Disparities":
         ax.barh(g.index, g["mean"] * 100, color=[RED if m > overall else GREEN for m in g["mean"]])
         ax.axvline(overall * 100, color=NAVY, ls="--", lw=1.3)
         for i, (m, n) in enumerate(zip(g["mean"], g["count"])):
-            ax.text(m*100+0.4, i, f"{m*100:.0f}% (n={n})", va="center", fontsize=7.5)
+            ax.text(m*100+0.4, i, f"{m*100:.0f}% (n={n})", va="center", fontsize=12)
         ax.set_xlabel("Repudiation %")
         st.pyplot(fig, width='stretch')
         if len(g) >= 2:
