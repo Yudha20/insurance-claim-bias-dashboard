@@ -18,14 +18,25 @@ of bias, because the dataset does not record whether each repudiation was *justi
 (fraud, non-disclosure, policy condition). Caveats are surfaced in-app.
 """
 import warnings; warnings.filterwarnings("ignore")
-import io
 import base64
-import html
 from pathlib import Path
+import streamlit as st
+import motion
+
+# Show the skeleton before the slow imports below. Otherwise Streamlit draws its
+# generic placeholder while scikit-learn loads.
+st.set_page_config(page_title="ClaimScope · Insurance analytics", layout="wide",
+                   initial_sidebar_state="expanded")
+NAV_VIEWS = ["Claims", "Overview", "Disparities", "Data preparation", "Models", "Evaluation", "Findings"]
+st.markdown("<style>" + Path(__file__).with_name("ui.css").read_text() + motion.motion_css() + "</style>", unsafe_allow_html=True)
+st.html(motion.boot_html(NAV_VIEWS, NAV_VIEWS[0]))
+st.html(motion.motion_script(), unsafe_allow_javascript=True)
+
+import io
+import html
 import numpy as np
 import pandas as pd
 import altair as alt
-import streamlit as st
 from scipy.stats import chi2_contingency
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler, OneHotEncoder
@@ -40,9 +51,6 @@ from sklearn.metrics import (accuracy_score, precision_score, recall_score, f1_s
                              classification_report)
 
 # ----------------------------------------------------------------------------
-st.set_page_config(page_title="ClaimScope · Insurance analytics", layout="wide",
-                   initial_sidebar_state="expanded")
-
 @st.cache_data(show_spinner=False)
 def product_font_css():
     faces = []
@@ -50,7 +58,11 @@ def product_font_css():
         data = base64.b64encode((Path(__file__).parent / "assets" / "fonts" / (filename + ".ttf")).read_bytes()).decode()
         faces.append(f"@font-face{{font-family:'Product Sans';font-style:{style};font-weight:{weight};font-display:swap;src:url(data:font/ttf;base64,{data}) format('truetype');}}")
     return "".join(faces)
-st.markdown("<style>" + product_font_css() + Path(__file__).with_name("ui.css").read_text() + "</style>", unsafe_allow_html=True)
+st.markdown("<style>" + product_font_css() + "</style>", unsafe_allow_html=True)
+
+def mark_rendered():
+    """Tell the browser this script run has finished drawing the page."""
+    st.html(motion.render_marker(st.session_state.active_view, st.session_state.script_run))
 
 
 # Colours below pass the colourblind-separation checks on a white surface.
@@ -390,6 +402,7 @@ if st.session_state.pop("settings_saved", False):
     st.toast("Settings applied.", icon=":material/check:")
 
 if "active_view" not in st.session_state: st.session_state.active_view = "Claims"
+st.session_state.script_run = st.session_state.get("script_run", 0) + 1
 # Native checkbox changes layout immediately in the browser; no Python rerun.
 st.html('<input type="checkbox" id="claims-navigation" checked aria-label="Show navigation" role="switch">\n<label for="claims-navigation" class="navigation-brand"><span class="nav-shield"></span><span class="nav-chevron"></span><span class="nav-brand-name">ClaimScope</span></label>')
 nav = [("Claims", "table_view", "Search, filter, and export claim records"),
@@ -425,6 +438,7 @@ except (ValueError, OSError, UnicodeError, pd.errors.ParserError) as exc:
     st.title("Unable to load claims")
     st.error(str(exc))
     st.info("Open Upload claims above. Replace the CSV, or remove it to return to the bundled sample.")
+    mark_rendered()
     st.stop()
 if "model_config" not in st.session_state:
     st.session_state.model_config = dict(test_size=.25, seed=42, zone_top=15, state_top=15, occ_top=12, reason_top=12)
@@ -470,331 +484,336 @@ for i, (col, label, value, tag, note) in enumerate(zip(st.columns(4),
     ["All records", f"{(1-overall)*100:.1f}%", f"{overall*100:.1f}%", "Data quality"],
     ["Current dataset", "Share of all claims", "Share of all claims", "Non-zero annual income"])):
     col.markdown(f'<div class="kpi" style="animation-delay:{i*40}ms"><div class="kpi-label">{label}</div><div class="kpi-value">{value}</div><div class="kpi-note">{note}<span class="kpi-tag">{tag}</span></div></div>', unsafe_allow_html=True)
-if view == "Claims":
-    page_intro("Every death claim in the current dataset, one row per claim. <b>Approved</b> means the claim was accepted. <b>Repudiated</b> means it was declined. The cards above always describe the whole dataset, on every page.")
-    with st.container(border=True):
-        st.subheader("Claim records", icon=":material/table_view:")
-        explain(how="Search by policyholder or policy number, then narrow by outcome and state. Filters combine, and only affect this table and its export. <b>Sum assured</b> is the amount the policy covers.",
-                caution="The outcome is the decision on record. It does not show whether that decision was correct.")
-        search_col, status_col, state_col = st.columns([2, 1, 1])
-        query = search_col.text_input("Search claims", placeholder="Name or policy number…")
-        status = status_col.selectbox("Outcome", ["All outcomes", "Approved Death Claim", "Repudiate Death"])
-        state = state_col.selectbox("State", ["All states"] + sorted(df.PI_STATE.unique()))
-        filtered = df.copy()
-        if query.strip():
-            filtered = filtered[filtered.PI_NAME.str.contains(query.strip(), case=False, regex=False) | filtered.POLICY_NO.astype(str).str.contains(query.strip(), case=False, regex=False)]
-        if status != "All outcomes":
-            filtered = filtered[filtered.POLICY_STATUS == status]
-        if state != "All states":
-            filtered = filtered[filtered.PI_STATE == state]
-        st.caption(f"{len(filtered):,} of {len(df):,} claims")
-        if filtered.empty:
-            st.info("No claims match these filters. Clear the search or choose All outcomes and All states.")
-        else:
-            display = filtered[["PI_NAME", "POLICY_NO", "PI_STATE", "PI_AGE", "SUM_ASSURED", "POLICY_STATUS"]].rename(columns={"PI_NAME":"Policyholder", "POLICY_NO":"Policy number", "PI_STATE":"State", "PI_AGE":"Age", "SUM_ASSURED":"Sum assured", "POLICY_STATUS":"Outcome"})
-            st.dataframe(display, hide_index=True, width="stretch", height=560, row_height=48, key="claims_table",
-                         column_config={"Sum assured":st.column_config.NumberColumn(format="localized"), "Age":st.column_config.NumberColumn(format="%d")})
-            st.download_button("Export matching claims", filtered.to_csv(index=False).encode(), "filtered_claims.csv", "text/csv", on_click=download_feedback)
-        with st.expander("Data quality notes"):
-            st.caption("What was cleaned when this dataset loaded. Every page uses the cleaned values.")
-            for n in notes: st.write(n)
+st.html(motion.page_skeletons_html(NAV_VIEWS))
+with st.container(key="page_view"):
+    if view == "Claims":
+        page_intro("Every death claim in the current dataset, one row per claim. <b>Approved</b> means the claim was accepted. <b>Repudiated</b> means it was declined. The cards above always describe the whole dataset, on every page.")
+        with st.container(border=True):
+            st.subheader("Claim records", icon=":material/table_view:")
+            explain(how="Search by policyholder or policy number, then narrow by outcome and state. Filters combine, and only affect this table and its export. <b>Sum assured</b> is the amount the policy covers.",
+                    caution="The outcome is the decision on record. It does not show whether that decision was correct.")
+            search_col, status_col, state_col = st.columns([2, 1, 1])
+            query = search_col.text_input("Search claims", placeholder="Name or policy number…")
+            status = status_col.selectbox("Outcome", ["All outcomes", "Approved Death Claim", "Repudiate Death"])
+            state = state_col.selectbox("State", ["All states"] + sorted(df.PI_STATE.unique()))
+            filtered = df.copy()
+            if query.strip():
+                filtered = filtered[filtered.PI_NAME.str.contains(query.strip(), case=False, regex=False) | filtered.POLICY_NO.astype(str).str.contains(query.strip(), case=False, regex=False)]
+            if status != "All outcomes":
+                filtered = filtered[filtered.POLICY_STATUS == status]
+            if state != "All states":
+                filtered = filtered[filtered.PI_STATE == state]
+            st.caption(f"{len(filtered):,} of {len(df):,} claims")
+            if filtered.empty:
+                st.info("No claims match these filters. Clear the search or choose All outcomes and All states.")
+            else:
+                display = filtered[["PI_NAME", "POLICY_NO", "PI_STATE", "PI_AGE", "SUM_ASSURED", "POLICY_STATUS"]].rename(columns={"PI_NAME":"Policyholder", "POLICY_NO":"Policy number", "PI_STATE":"State", "PI_AGE":"Age", "SUM_ASSURED":"Sum assured", "POLICY_STATUS":"Outcome"})
+                st.dataframe(display, hide_index=True, width="stretch", height=560, row_height=48, key="claims_table",
+                             column_config={"Sum assured":st.column_config.NumberColumn(format="localized"), "Age":st.column_config.NumberColumn(format="%d")})
+                st.download_button("Export matching claims", filtered.to_csv(index=False).encode(), "filtered_claims.csv", "text/csv", on_click=download_feedback)
+            with st.expander("Data quality notes"):
+                st.caption("What was cleaned when this dataset loaded. Every page uses the cleaned values.")
+                for n in notes: st.write(n)
 
-# ============================== TAB 1 — DESCRIPTIVE =========================
-if view == "Overview":
-    st.header("Descriptive Analysis — Cross-Tabulation vs POLICY_STATUS")
-    page_intro("Start here to see how claim outcomes differ across any one attribute. Choose a field, compare the counts and rates, then look for groups far from the overall rate.")
+    # ============================== TAB 1 — DESCRIPTIVE =========================
+    if view == "Overview":
+        st.header("Descriptive Analysis — Cross-Tabulation vs POLICY_STATUS")
+        page_intro("Start here to see how claim outcomes differ across any one attribute. Choose a field, compare the counts and rates, then look for groups far from the overall rate.")
 
-    cat_options = [c for c in ["PI_GENDER", "EARLY_NON", "MEDICAL_NONMED", "PAYMENT_MODE",
-                               "ZONE", "PI_STATE", "PI_OCCUPATION", "REASON_FOR_CLAIM"]
-                   if c in df.columns]
-    sel = st.selectbox("Cross-tabulate POLICY_STATUS against:", cat_options, index=0)
+        cat_options = [c for c in ["PI_GENDER", "EARLY_NON", "MEDICAL_NONMED", "PAYMENT_MODE",
+                                   "ZONE", "PI_STATE", "PI_OCCUPATION", "REASON_FOR_CLAIM"]
+                       if c in df.columns]
+        sel = st.selectbox("Cross-tabulate POLICY_STATUS against:", cat_options, index=0)
 
-    explain(how=f"<b>{e(sel)}</b>: {FIELD_NOTES.get(sel, 'Selected field.')} <b>Counts</b> give the number of claims in each group. <b>Row %</b> gives each group's split between outcomes, so every row adds up to 100 and groups of different sizes can be compared fairly.")
+        explain(how=f"<b>{e(sel)}</b>: {FIELD_NOTES.get(sel, 'Selected field.')} <b>Counts</b> give the number of claims in each group. <b>Row %</b> gives each group's split between outcomes, so every row adds up to 100 and groups of different sizes can be compared fairly.")
 
-    colL, colR = st.columns([1, 1])
-    with colL:
-        st.subheader(f"Counts: {sel} × POLICY_STATUS")
-        ct_counts = pd.crosstab(df[sel], df[TARGET], margins=True, margins_name="Total")
-        st.dataframe(ct_counts, width='stretch')
-    with colR:
-        st.subheader("Row % (repudiation rate by group)")
-        ct_pct = (pd.crosstab(df[sel], df[TARGET], normalize="index") * 100).round(1)
-        st.dataframe(ct_pct, width='stretch')
+        colL, colR = st.columns([1, 1])
+        with colL:
+            st.subheader(f"Counts: {sel} × POLICY_STATUS")
+            ct_counts = pd.crosstab(df[sel], df[TARGET], margins=True, margins_name="Total")
+            st.dataframe(ct_counts, width='stretch')
+        with colR:
+            st.subheader("Row % (repudiation rate by group)")
+            ct_pct = (pd.crosstab(df[sel], df[TARGET], normalize="index") * 100).round(1)
+            st.dataframe(ct_pct, width='stretch')
 
-    # chart
-    g = df.groupby(sel)["REPUDIATED"].agg(["mean", "count"])
-    g = g[g["count"] >= 5].sort_values("mean")
-    st.subheader(f"Repudiation rate by {sel}")
-    hidden = df[sel].nunique() - len(g)
-    explain(how="Each bar is the share of that group's claims that were declined. The dashed line is the overall rate across all claims, so red bars sit above it and blue bars at or below it.",
-            data=rate_insight(g),
-            caution=(f"{hidden} {'group has' if hidden == 1 else 'groups have'} fewer than 5 claims and {'is' if hidden == 1 else 'are'} left out of this chart, but still counted in the tables above." if hidden else None))
-    rate_chart(g, overall)
-
-    st.subheader("Numeric summary by outcome")
-    median_gap = None
-    if df.REPUDIATED.nunique() == 2:
-        approved_sum, repudiated_sum = [df.loc[df.REPUDIATED == k, "SUM_ASSURED"].median() for k in (0, 1)]
-        median_gap = f"The median sum assured is {repudiated_sum:,.0f} on repudiated claims and {approved_sum:,.0f} on approved claims."
-    explain(how="Compares age, sum assured and income between the two outcomes. <b>25%, 50% and 75%</b> are the values below which that share of claims falls, and 50% is the median. A mean far above its median points to a few very large values.",
-            data=median_gap,
-            caution="Zero income means not recorded, so income figures here are pulled down by missing values.")
-    num_cols = [c for c in ["PI_AGE", "SUM_ASSURED", "PI_ANNUAL_INCOME"] if c in df.columns]
-    st.dataframe(df.groupby(TARGET)[num_cols].describe().T.round(1), width='stretch')
-
-# ============================== TAB 2 — DIAGNOSTIC =========================
-if view == "Disparities":
-    st.header("Diagnostic Analysis — Probing Differential Treatment")
-    page_intro("This page ranks which attributes are most linked to repudiation, then looks closely at team, age and income. Use it to decide where a claim-file review is most worthwhile.")
-    st.warning("**Interpretation guardrail:** a higher repudiation rate for a group is a "
-               "*disparity*, not automatically *bias*. The data does not record whether each "
-               "repudiation was justified (fraud / non-disclosure / policy condition). "
-               "Treat large gaps as **leads to audit**, confirm with claim-file review.")
-
-    # association strength ranking
-    st.subheader("Which factors are most associated with the outcome?")
-    assoc_cols = [c for c in ["ZONE", "PI_STATE", "PAYMENT_MODE", "PI_OCCUPATION",
-                              "EARLY_NON", "MEDICAL_NONMED", "PI_GENDER"] if c in df.columns]
-    rows = []
-    for c in assoc_cols:
-        chi2, p, dof, v, ncat = cramers_v(df, c)
-        rows.append({"Factor": c, "Cramér's V": round(v, 3), "χ²": round(chi2, 1),
-                     "dof": dof, "p-value": f"{p:.2e}", "categories": ncat,
-                     "significant (p<0.05)": "Yes" if p < 0.05 else "No"})
-    assoc = pd.DataFrame(rows).sort_values("Cramér's V", ascending=False)
-    st.dataframe(assoc, width='stretch', hide_index=True)
-    top_factor = assoc.iloc[0]
-    weak = assoc.loc[assoc["significant (p<0.05)"] == "No", "Factor"].tolist()
-    high_card = assoc[assoc["categories"] > 20]
-    compact = assoc[(assoc["categories"] <= 10) & (assoc["significant (p<0.05)"] == "Yes")]
-    top_v = top_factor["Cramér's V"]
-    finding = f"<b>{e(top_factor['Factor'])}</b> has the strongest link, with V = {top_v:.3f}."
-    if weak:
-        finding += " No clear link for " + ", ".join(f"<b>{e(x)}</b>" for x in weak) + "."
-    if not compact.empty:
-        finding += f" Among fields with few categories, the strongest is <b>{e(compact.iloc[0]['Factor'])}</b>, a result less affected by small categories."
-    explain(how="<b>Cramér's V</b> runs from 0, no link to the outcome, to 1, the outcome is fully determined by the field. Blue bars are statistically significant and grey bars are not.",
-            data=finding,
-            caution=("Fields with many small categories can score high partly by chance: " + ", ".join(f"{e(r.Factor)} ({r.categories} categories)" for r in high_card.itertuples()) + ". A strong link also says nothing about the cause." if not high_card.empty else "A strong link says nothing about the cause."))
-    glossary("What the table columns mean", {
-        "χ²": "How far the actual counts are from what you would expect if the field had no link to the outcome. Bigger means further.",
-        "dof": "Degrees of freedom, set by the number of categories. The p-value calculation uses it.",
-        "p-value": "How likely a link this strong would be by chance alone. Below 0.05 is treated as significant here.",
-        "categories": "How many distinct values the field has.",
-    })
-
-    significant, not_significant = "Significant (p<0.05)", "Not significant (p≥0.05)"
-    value_bars(assoc["Factor"], assoc["Cramér's V"], "Cramér's V (effect size)", fmt=".3f", groups={
-        "assign": [significant if x == "Yes" else not_significant for x in assoc["significant (p<0.05)"]],
-        "colors": {significant: NAVY, not_significant: GREY}})
-
-    colA, colB = st.columns(2)
-
-    # team / zone
-    with colA:
-        st.subheader("By TEAM / ZONE")
-        minn = st.slider("Min claims per team", 10, 60, 25, key="zmin")
-        g = df.groupby("ZONE")["REPUDIATED"].agg(["mean", "count"])
-        g = g[g["count"] >= minn].sort_values("mean")
-        explain(how=f"Showing {len(g)} of {df['ZONE'].nunique()} teams. Raise the minimum to hide small teams, where a few claims can move the rate sharply.",
+        # chart
+        g = df.groupby(sel)["REPUDIATED"].agg(["mean", "count"])
+        g = g[g["count"] >= 5].sort_values("mean")
+        st.subheader(f"Repudiation rate by {sel}")
+        hidden = df[sel].nunique() - len(g)
+        explain(how="Each bar is the share of that group's claims that were declined. The dashed line is the overall rate across all claims, so red bars sit above it and blue bars at or below it.",
                 data=rate_insight(g),
-                caution="Teams may handle different kinds of policy, so compare case mix before comparing teams.")
+                caution=(f"{hidden} {'group has' if hidden == 1 else 'groups have'} fewer than 5 claims and {'is' if hidden == 1 else 'are'} left out of this chart, but still counted in the tables above." if hidden else None))
         rate_chart(g, overall)
 
-    # age
-    with colB:
-        st.subheader("By AGE BAND")
-        bins = [0, 18, 30, 40, 50, 60, 70, 200]
-        labs = ["<18", "18-29", "30-39", "40-49", "50-59", "60-69", "70+"]
-        ab = pd.cut(df["PI_AGE"], bins=bins, labels=labs, right=False)
-        g = df.assign(AB=ab).groupby("AB", observed=True)["REPUDIATED"].agg(["mean", "count"])
-        explain(how="Each column is an age group's repudiation rate, with its claim count beneath. The dashed line is the overall rate.",
-                data=rate_insight(g))
-        rate_chart(g, overall, horizontal=False)
+        st.subheader("Numeric summary by outcome")
+        median_gap = None
+        if df.REPUDIATED.nunique() == 2:
+            approved_sum, repudiated_sum = [df.loc[df.REPUDIATED == k, "SUM_ASSURED"].median() for k in (0, 1)]
+            median_gap = f"The median sum assured is {repudiated_sum:,.0f} on repudiated claims and {approved_sum:,.0f} on approved claims."
+        explain(how="Compares age, sum assured and income between the two outcomes. <b>25%, 50% and 75%</b> are the values below which that share of claims falls, and 50% is the median. A mean far above its median points to a few very large values.",
+                data=median_gap,
+                caution="Zero income means not recorded, so income figures here are pulled down by missing values.")
+        num_cols = [c for c in ["PI_AGE", "SUM_ASSURED", "PI_ANNUAL_INCOME"] if c in df.columns]
+        st.dataframe(df.groupby(TARGET)[num_cols].describe().T.round(1), width='stretch')
 
-        st.subheader("By INCOME QUARTILE")
-        income_min = st.number_input("Minimum recorded annual income", min_value=0, value=0, step=10000, help="Explore income groups above this threshold. Model training still uses the complete dataset.")
-        dz = df[df["PI_ANNUAL_INCOME"] > income_min].copy()
-        if len(dz) > 20:
-            dz["Q"] = pd.qcut(dz["PI_ANNUAL_INCOME"], 4, duplicates="drop")
-            g = dz.groupby("Q", observed=True)["REPUDIATED"].agg(["mean", "count"])
-            g.index = [interval_label(q) for q in g.index]
-            explain(how=f"Claims above the minimum are split into up to four bands of similar size. {len(dz):,} of {len(df):,} claims qualify. The dashed line stays at the rate for all claims.",
+    # ============================== TAB 2 — DIAGNOSTIC =========================
+    if view == "Disparities":
+        st.header("Diagnostic Analysis — Probing Differential Treatment")
+        page_intro("This page ranks which attributes are most linked to repudiation, then looks closely at team, age and income. Use it to decide where a claim-file review is most worthwhile.")
+        st.warning("**Interpretation guardrail:** a higher repudiation rate for a group is a "
+                   "*disparity*, not automatically *bias*. The data does not record whether each "
+                   "repudiation was justified (fraud / non-disclosure / policy condition). "
+                   "Treat large gaps as **leads to audit**, confirm with claim-file review.")
+
+        # association strength ranking
+        st.subheader("Which factors are most associated with the outcome?")
+        assoc_cols = [c for c in ["ZONE", "PI_STATE", "PAYMENT_MODE", "PI_OCCUPATION",
+                                  "EARLY_NON", "MEDICAL_NONMED", "PI_GENDER"] if c in df.columns]
+        rows = []
+        for c in assoc_cols:
+            chi2, p, dof, v, ncat = cramers_v(df, c)
+            rows.append({"Factor": c, "Cramér's V": round(v, 3), "χ²": round(chi2, 1),
+                         "dof": dof, "p-value": f"{p:.2e}", "categories": ncat,
+                         "significant (p<0.05)": "Yes" if p < 0.05 else "No"})
+        assoc = pd.DataFrame(rows).sort_values("Cramér's V", ascending=False)
+        st.dataframe(assoc, width='stretch', hide_index=True)
+        top_factor = assoc.iloc[0]
+        weak = assoc.loc[assoc["significant (p<0.05)"] == "No", "Factor"].tolist()
+        high_card = assoc[assoc["categories"] > 20]
+        compact = assoc[(assoc["categories"] <= 10) & (assoc["significant (p<0.05)"] == "Yes")]
+        top_v = top_factor["Cramér's V"]
+        finding = f"<b>{e(top_factor['Factor'])}</b> has the strongest link, with V = {top_v:.3f}."
+        if weak:
+            finding += " No clear link for " + ", ".join(f"<b>{e(x)}</b>" for x in weak) + "."
+        if not compact.empty:
+            finding += f" Among fields with few categories, the strongest is <b>{e(compact.iloc[0]['Factor'])}</b>, a result less affected by small categories."
+        explain(how="<b>Cramér's V</b> runs from 0, no link to the outcome, to 1, the outcome is fully determined by the field. Blue bars are statistically significant and grey bars are not.",
+                data=finding,
+                caution=("Fields with many small categories can score high partly by chance: " + ", ".join(f"{e(r.Factor)} ({r.categories} categories)" for r in high_card.itertuples()) + ". A strong link also says nothing about the cause." if not high_card.empty else "A strong link says nothing about the cause."))
+        glossary("What the table columns mean", {
+            "χ²": "How far the actual counts are from what you would expect if the field had no link to the outcome. Bigger means further.",
+            "dof": "Degrees of freedom, set by the number of categories. The p-value calculation uses it.",
+            "p-value": "How likely a link this strong would be by chance alone. Below 0.05 is treated as significant here.",
+            "categories": "How many distinct values the field has.",
+        })
+
+        significant, not_significant = "Significant (p<0.05)", "Not significant (p≥0.05)"
+        value_bars(assoc["Factor"], assoc["Cramér's V"], "Cramér's V (effect size)", fmt=".3f", groups={
+            "assign": [significant if x == "Yes" else not_significant for x in assoc["significant (p<0.05)"]],
+            "colors": {significant: NAVY, not_significant: GREY}})
+
+        colA, colB = st.columns(2)
+
+        # team / zone
+        with colA:
+            st.subheader("By TEAM / ZONE")
+            minn = st.slider("Min claims per team", 10, 60, 25, key="zmin")
+            g = df.groupby("ZONE")["REPUDIATED"].agg(["mean", "count"])
+            g = g[g["count"] >= minn].sort_values("mean")
+            explain(how=f"Showing {len(g)} of {df['ZONE'].nunique()} teams. Raise the minimum to hide small teams, where a few claims can move the rate sharply.",
                     data=rate_insight(g),
-                    caution=f"Income is not recorded for {(df.PI_ANNUAL_INCOME.fillna(0) <= 0).mean()*100:.0f}% of all claims, so these bands may not represent everyone.")
+                    caution="Teams may handle different kinds of policy, so compare case mix before comparing teams.")
+            rate_chart(g, overall)
+
+        # age
+        with colB:
+            st.subheader("By AGE BAND")
+            bins = [0, 18, 30, 40, 50, 60, 70, 200]
+            labs = ["<18", "18-29", "30-39", "40-49", "50-59", "60-69", "70+"]
+            ab = pd.cut(df["PI_AGE"], bins=bins, labels=labs, right=False)
+            g = df.assign(AB=ab).groupby("AB", observed=True)["REPUDIATED"].agg(["mean", "count"])
+            explain(how="Each column is an age group's repudiation rate, with its claim count beneath. The dashed line is the overall rate.",
+                    data=rate_insight(g))
             rate_chart(g, overall, horizontal=False)
-        else:
-            st.info("Too few claims above this income to form bands. Lower the minimum.")
 
-# ============================== TAB 3 — FEATURE ENGINEERING ================
-if view == "Data preparation":
-    st.header("Data preparation")
-    page_intro("Check how trustworthy each field is and how the raw data becomes model input. <b>Field quality</b> looks at one field at a time, and <b>Model features</b> shows what the models actually receive.")
-    detail, preview = st.tabs(["Field quality", "Model features"])
-    with detail:
-        field = st.selectbox("Inspect field", ["PI_ANNUAL_INCOME", "PI_AGE", "SUM_ASSURED", "ZONE", "PI_STATE", "PI_OCCUPATION", "REASON_FOR_CLAIM"])
-        raw = pd.read_csv(io.BytesIO(file_bytes)) if file_bytes is not None else pd.read_csv(Path(__file__).with_name("Insurance.csv"))
-        changed = int((raw[field].astype(str).str.strip() != df[field].astype(str)).sum())
-        explain(how=f"<b>{e(field)}</b>: {FIELD_NOTES.get(field, 'Selected field.')} <b>Missing values</b> are blank cells in the source file. <b>Distinct values</b> counts the different entries before cleaning.")
-        m1,m2,m3 = st.columns(3)
-        m1.metric("Records", f"{len(raw):,}")
-        m2.metric("Missing values", f"{raw[field].isna().sum():,}")
-        m3.metric("Distinct values", f"{raw[field].nunique():,}")
-        if field == "PI_ANNUAL_INCOME":
-            explain(caution="Zero income means not recorded, so the blank-cell count above can read 0 while many values are effectively missing. The models flag these records and fill in the median income.")
-            value_bars(["Recorded", "Missing or zero"], [int((df[field]>0).sum()), int((df[field].fillna(0)<=0).sum())], "Claims")
-        elif field in ["PI_AGE", "SUM_ASSURED"]:
-            counts = df[field].value_counts(bins=12).sort_index()
-            value_bars([interval_label(i) for i in counts.index], counts.to_numpy(), "Claims")
-        else:
-            limit = st.slider("Categories to preview", 4, 24, 12, step=4)
-            explain(how="The most common values in the cleaned data, largest first. A long tail of small categories is what the limits in Model settings combine into Other.")
-            counts = df[field].value_counts().head(limit)
-            value_bars(counts.index, counts.to_numpy(), "Claims")
-        explain(how="The table compares the first 20 rows before and after cleaning. Cleaning removes commas from amounts, trims spaces, fills blank text with Unknown and merges different capitalisations of ZONE.",
-                data=f"{changed:,} of {len(df):,} values differ from the source file after cleaning.")
-        comparison = pd.DataFrame({"Original value":raw[field].astype(str).head(20), "Prepared value":df[field].astype(str).head(20)})
-        st.dataframe(comparison, hide_index=True, width="stretch")
-    with preview:
-        explain(how="Each row is one claim as the models receive it, before numbers are scaled and categories encoded. Choose columns to preview, and use Model settings at the top right to change category limits.",
-                caution="Policy numbers and names are excluded, so no model can recognise an individual claim.")
+            st.subheader("By INCOME QUARTILE")
+            income_min = st.number_input("Minimum recorded annual income", min_value=0, value=0, step=10000, help="Explore income groups above this threshold. Model training still uses the complete dataset.")
+            dz = df[df["PI_ANNUAL_INCOME"] > income_min].copy()
+            if len(dz) > 20:
+                dz["Q"] = pd.qcut(dz["PI_ANNUAL_INCOME"], 4, duplicates="drop")
+                g = dz.groupby("Q", observed=True)["REPUDIATED"].agg(["mean", "count"])
+                g.index = [interval_label(q) for q in g.index]
+                explain(how=f"Claims above the minimum are split into up to four bands of similar size. {len(dz):,} of {len(df):,} claims qualify. The dashed line stays at the rate for all claims.",
+                        data=rate_insight(g),
+                        caution=f"Income is not recorded for {(df.PI_ANNUAL_INCOME.fillna(0) <= 0).mean()*100:.0f}% of all claims, so these bands may not represent everyone.")
+                rate_chart(g, overall, horizontal=False)
+            else:
+                st.info("Too few claims above this income to form bands. Lower the minimum.")
+
+    # ============================== TAB 3 — FEATURE ENGINEERING ================
+    if view == "Data preparation":
+        st.header("Data preparation")
+        page_intro("Check how trustworthy each field is and how the raw data becomes model input. <b>Field quality</b> looks at one field at a time, and <b>Model features</b> shows what the models actually receive.")
+        detail, preview = st.tabs(["Field quality", "Model features"])
+        with detail:
+            field = st.selectbox("Inspect field", ["PI_ANNUAL_INCOME", "PI_AGE", "SUM_ASSURED", "ZONE", "PI_STATE", "PI_OCCUPATION", "REASON_FOR_CLAIM"])
+            raw = pd.read_csv(io.BytesIO(file_bytes)) if file_bytes is not None else pd.read_csv(Path(__file__).with_name("Insurance.csv"))
+            changed = int((raw[field].astype(str).str.strip() != df[field].astype(str)).sum())
+            explain(how=f"<b>{e(field)}</b>: {FIELD_NOTES.get(field, 'Selected field.')} <b>Missing values</b> are blank cells in the source file. <b>Distinct values</b> counts the different entries before cleaning.")
+            m1,m2,m3 = st.columns(3)
+            m1.metric("Records", f"{len(raw):,}")
+            m2.metric("Missing values", f"{raw[field].isna().sum():,}")
+            m3.metric("Distinct values", f"{raw[field].nunique():,}")
+            if field == "PI_ANNUAL_INCOME":
+                explain(caution="Zero income means not recorded, so the blank-cell count above can read 0 while many values are effectively missing. The models flag these records and fill in the median income.")
+                value_bars(["Recorded", "Missing or zero"], [int((df[field]>0).sum()), int((df[field].fillna(0)<=0).sum())], "Claims")
+            elif field in ["PI_AGE", "SUM_ASSURED"]:
+                counts = df[field].value_counts(bins=12).sort_index()
+                value_bars([interval_label(i) for i in counts.index], counts.to_numpy(), "Claims")
+            else:
+                limit = st.slider("Categories to preview", 4, 24, 12, step=4)
+                explain(how="The most common values in the cleaned data, largest first. A long tail of small categories is what the limits in Model settings combine into Other.")
+                counts = df[field].value_counts().head(limit)
+                value_bars(counts.index, counts.to_numpy(), "Claims")
+            explain(how="The table compares the first 20 rows before and after cleaning. Cleaning removes commas from amounts, trims spaces, fills blank text with Unknown and merges different capitalisations of ZONE.",
+                    data=f"{changed:,} of {len(df):,} values differ from the source file after cleaning.")
+            comparison = pd.DataFrame({"Original value":raw[field].astype(str).head(20), "Prepared value":df[field].astype(str).head(20)})
+            st.dataframe(comparison, hide_index=True, width="stretch")
+        with preview:
+            explain(how="Each row is one claim as the models receive it, before numbers are scaled and categories encoded. Choose columns to preview, and use Model settings at the top right to change category limits.",
+                    caution="Policy numbers and names are excluded, so no model can recognise an individual claim.")
+            X, y, num, cat = build_design_matrix(df, zone_top, state_top, occ_top, reason_top)
+            selected = st.multiselect("Preview columns", list(X.columns), default=list(X.columns)[:6])
+            if selected:
+                st.dataframe(X[selected].head(20), width="stretch", hide_index=True)
+            else:
+                st.info("Choose at least one column to preview model features.")
+            pre = make_preprocessor(num, cat).fit(X)
+            st.caption(f"{len(X):,} rows · {pre.transform(X).shape[1]} encoded features · identifiers excluded. Encoding gives each category its own yes-or-no column, which is why there are more features than fields.")
+            with st.expander("Transformation details"):
+                for note in notes: st.write(note)
+                st.write("Numeric values are median-imputed and standardized. Categories are one-hot encoded; unseen categories are handled safely.")
+
+    # ============================== TAB 4 — MODELS =============================
+    if view in ["Models", "Evaluation"] and (len(df) < 24 or df.REPUDIATED.value_counts().min() < 6 or df.REPUDIATED.nunique() < 2):
+        st.warning("Models need at least 24 records and 6 claims of each outcome. Use a larger dataset or return to Claims.")
+        mark_rendered()
+        st.stop()
+
+    if view == "Models":
+        st.header("Supervised Classification Models")
+        page_intro("Four models learn to predict each claim's outcome from its attributes. This tests how predictable decisions are from the data. The models are not meant to decide claims.")
+        glossary("The four models", {
+            "KNN": "Looks at the 15 most similar past claims and takes their majority outcome.",
+            "Decision Tree": "A flowchart of up to 6 yes-or-no questions. Easy to inspect, but less flexible.",
+            "Random Forest": "300 trees, each up to 12 levels deep, voting together. Powerful, but can memorise its training data.",
+            "Gradient Boosting": "A series of small trees, each correcting the last one's mistakes.",
+        })
+        glossary("What the metrics mean", {
+            "Test Acc": "Share of unseen claims predicted correctly. Train Acc is the same measure on claims the model learned from.",
+            "Precision": "Of the claims a model flags as repudiated, the share that really were.",
+            "Recall": "Of the claims really repudiated, the share the model catches.",
+            "F1": "A single balance of precision and recall.",
+            "ROC-AUC": "How well a model ranks repudiated claims above approved ones. 0.5 is guessing and 1.0 is perfect.",
+            "Overfit gap": "Train Acc minus Test Acc. A large gap means the model learned its training claims better than it can predict new ones.",
+        })
+
         X, y, num, cat = build_design_matrix(df, zone_top, state_top, occ_top, reason_top)
-        selected = st.multiselect("Preview columns", list(X.columns), default=list(X.columns)[:6])
-        if selected:
-            st.dataframe(X[selected].head(20), width="stretch", hide_index=True)
+        results, (ntr, nte, tr_pos, te_pos) = train_models(X, y, num, cat, test_size, int(seed))
+        explain(how=f"Models learn from <b>{ntr:,}</b> claims ({tr_pos*100:.1f}% repudiated) and are scored on <b>{nte:,}</b> they have not seen ({te_pos*100:.1f}% repudiated). Both groups keep the same outcome mix. Change the split in Model settings.",
+                caution="Decision Tree and Random Forest give the rarer outcome extra weight, which usually raises recall. KNN and Gradient Boosting do not, so compare their scores with that in mind.")
+
+        metrics = pd.DataFrame({
+            m: {"Train Acc": r["train_acc"], "Test Acc": r["test_acc"],
+                "Precision": r["precision"], "Recall": r["recall"],
+                "F1": r["f1"], "ROC-AUC": r["roc_auc"],
+                "Overfit gap": r["train_acc"] - r["test_acc"]}
+            for m, r in results.items()
+        }).T.round(3)
+        st.subheader("Metric comparison (test set)")
+        st.dataframe(metrics.style.highlight_max(axis=0, subset=["Test Acc", "Precision",
+                     "Recall", "F1", "ROC-AUC"], color="#d4efdf")
+                     .highlight_max(axis=0, subset=["Overfit gap"], color="#f5b7b1").format("{:.3f}"),
+                     width='stretch')
+
+        best = metrics["ROC-AUC"].idxmax()
+        baseline = max(te_pos, 1 - te_pos)
+        best_acc = metrics["Test Acc"].idxmax()
+        largest_gap, smallest_gap = metrics["Overfit gap"].idxmax(), metrics["Overfit gap"].idxmin()
+        explain(how="Green marks the best score in each column. Red marks the largest overfit gap.",
+                data=(f"<b>{e(best)}</b> ranks claims best, with ROC-AUC {metrics.loc[best, 'ROC-AUC']:.3f}. "
+                      f"<b>{e(best_acc)}</b> has the top test accuracy at {metrics.loc[best_acc, 'Test Acc']*100:.1f}%, against {baseline*100:.1f}% from always predicting the more common outcome. "
+                      f"<b>{e(largest_gap)}</b> has the largest overfit gap ({metrics.loc[largest_gap, 'Overfit gap']:.3f}) and <b>{e(smallest_gap)}</b> the smallest ({metrics.loc[smallest_gap, 'Overfit gap']:.3f})."),
+                caution="Accuracy alone can mislead when one outcome is more common, so read it with recall and ROC-AUC.")
+
+        st.subheader("Per-model classification report")
+        pick = st.selectbox("Model", list(results.keys()), index=2)
+        explain(how="Scores for each outcome separately, 0 to 1. <b>Support</b> is the number of test claims with that outcome. <b>Macro avg</b> treats both outcomes equally, and <b>weighted avg</b> accounts for how common each one is.",
+                data=f"<b>{e(pick)}</b> catches {results[pick]['recall']*100:.0f}% of repudiated test claims, and {results[pick]['precision']*100:.0f}% of the claims it flags as repudiated really were.")
+        st.code(results[pick]["report"])
+        st.session_state["results"] = results   # share with eval tab
+
+    # ============================== TAB 5 — EVALUATION =========================
+    if view == "Evaluation":
+        st.header("Model Evaluation — Stability & Errors")
+        page_intro("The ROC, metric and confusion charts use test claims the models never saw during training, so they show how each model handles new claims. Feature importance shows what the Random Forest learned from its training claims.")
+        X, y, num, cat = build_design_matrix(df, zone_top, state_top, occ_top, reason_top)
+        results, _ = train_models(X, y, num, cat, test_size, int(seed))
+
+        st.subheader("ROC curves")
+        best_auc = max(results, key=lambda m: results[m]["roc_auc"])
+        explain(how="Each curve shows the trade-off as a model flags more claims: catching more repudiations (up) at the cost of more false alarms on approved claims (right). Closer to the top-left is better. The dashed diagonal is random guessing.",
+                data=f"<b>{e(best_auc)}</b> has the highest AUC at {results[best_auc]['roc_auc']:.3f}, the area under its curve. Hover over a curve for exact rates.",
+                caution="A model scoring above 0.5 shows outcomes are partly predictable from these attributes. It does not show why, or whether the decisions were fair.")
+        roc_chart(results)
+
+        st.subheader("Metric comparison")
+        top_recall = max(results, key=lambda m: results[m]["recall"])
+        top_precision = max(results, key=lambda m: results[m]["precision"])
+        explain(how="Taller is better. Definitions are on the Models page. Favour recall when missing a repudiation costs most, and precision when a false flag costs most.",
+                data=f"<b>{e(top_recall)}</b> has the highest recall at {results[top_recall]['recall']:.2f}, and <b>{e(top_precision)}</b> the highest precision at {results[top_precision]['precision']:.2f}.")
+        metric_chart(results)
+
+        st.subheader("Confusion matrices (test set)")
+        largest = max(int(r["cm"].max()) for r in results.values())
+        fewest_missed = min(results, key=lambda m: results[m]["cm"][1, 0])
+        missed_cm = results[fewest_missed]["cm"]
+        explain(how="Rows are what actually happened and columns are what the model predicted. The top-left and bottom-right cells are correct. <b>Bottom-left</b> is a repudiation the model missed, and <b>top-right</b> is an approved claim it wrongly flagged. All four share one colour scale, and darker means more claims.",
+                data=f"<b>{e(fewest_missed)}</b> misses the fewest repudiations, {missed_cm[1, 0]:,} of {missed_cm[1].sum():,}, while wrongly flagging {missed_cm[0, 1]:,} of {missed_cm[0].sum():,} approved claims.")
+        cols = st.columns(2)
+        for i, (name, r) in enumerate(results.items()):
+            with cols[i % 2]:
+                confusion_chart(name, r, largest)
+
+        # feature importance (RF)
+        st.subheader("Feature importance (Random Forest)")
+        rf = results["Random Forest"]["pipe"]
+        ohe = rf.named_steps["pre"].named_transformers_["cat"].named_steps["oh"]
+        X, y, num, cat = build_design_matrix(df, zone_top, state_top, occ_top, reason_top)
+        feat = num + list(ohe.get_feature_names_out(cat))
+        imp = pd.Series(rf.named_steps["clf"].feature_importances_, index=feat)
+        by_field = imp.groupby([next((c for c in cat if name.startswith(c + "_")), name) for name in imp.index]).sum().sort_values(ascending=False)
+        imp = imp.sort_values(ascending=False).head(15)
+        explain(how="The 15 inputs the Random Forest relied on most. Each category is its own input, written as field_category, such as ZONE_AGENCY. Importance adds up to 1 across all inputs.",
+                data="Added up by field, the largest shares belong to " + ", ".join(f"<b>{e(name)}</b> ({share*100:.0f}%)" for name, share in by_field.head(3).items()) + ".",
+                caution="Importance shows what the model used, not what caused an outcome. Fields such as REASON_FOR_CLAIM and EARLY_NON may reflect information from the claim itself, which can make models look stronger than they would be earlier in the process.")
+        value_bars(imp.index, imp.values, "Importance", fmt=".3f")
+
+    # ============================== TAB 6 — FINDINGS ===========================
+    if view == "Findings":
+        st.header("Findings & Recommendations")
+        page_intro("The main takeaways from the current dataset and what to check next. The figures recalculate if you upload a different file.")
+        st.write(f"Of {len(df):,} claims, {int(df.REPUDIATED.sum()):,} were repudiated ({overall:.1%}).")
+        group = df.groupby("ZONE").REPUDIATED.agg(["mean", "count"])
+        eligible = group[group["count"] >= 20].sort_values("mean")
+        if len(eligible) >= 2:
+            st.write(f"Among teams with at least 20 claims, repudiation ranges from {eligible['mean'].min():.1%} to {eligible['mean'].max():.1%}. Compare case mix and documented grounds before interpreting this gap.")
         else:
-            st.info("Choose at least one column to preview model features.")
-        pre = make_preprocessor(num, cat).fit(X)
-        st.caption(f"{len(X):,} rows · {pre.transform(X).shape[1]} encoded features · identifiers excluded. Encoding gives each category its own yes-or-no column, which is why there are more features than fields.")
-        with st.expander("Transformation details"):
-            for note in notes: st.write(note)
-            st.write("Numeric values are median-imputed and standardized. Categories are one-hot encoded; unseen categories are handled safely.")
-
-# ============================== TAB 4 — MODELS =============================
-if view in ["Models", "Evaluation"] and (len(df) < 24 or df.REPUDIATED.value_counts().min() < 6 or df.REPUDIATED.nunique() < 2):
-    st.warning("Models need at least 24 records and 6 claims of each outcome. Use a larger dataset or return to Claims.")
-    st.stop()
-
-if view == "Models":
-    st.header("Supervised Classification Models")
-    page_intro("Four models learn to predict each claim's outcome from its attributes. This tests how predictable decisions are from the data. The models are not meant to decide claims.")
-    glossary("The four models", {
-        "KNN": "Looks at the 15 most similar past claims and takes their majority outcome.",
-        "Decision Tree": "A flowchart of up to 6 yes-or-no questions. Easy to inspect, but less flexible.",
-        "Random Forest": "300 trees, each up to 12 levels deep, voting together. Powerful, but can memorise its training data.",
-        "Gradient Boosting": "A series of small trees, each correcting the last one's mistakes.",
-    })
-    glossary("What the metrics mean", {
-        "Test Acc": "Share of unseen claims predicted correctly. Train Acc is the same measure on claims the model learned from.",
-        "Precision": "Of the claims a model flags as repudiated, the share that really were.",
-        "Recall": "Of the claims really repudiated, the share the model catches.",
-        "F1": "A single balance of precision and recall.",
-        "ROC-AUC": "How well a model ranks repudiated claims above approved ones. 0.5 is guessing and 1.0 is perfect.",
-        "Overfit gap": "Train Acc minus Test Acc. A large gap means the model learned its training claims better than it can predict new ones.",
-    })
-
-    X, y, num, cat = build_design_matrix(df, zone_top, state_top, occ_top, reason_top)
-    results, (ntr, nte, tr_pos, te_pos) = train_models(X, y, num, cat, test_size, int(seed))
-    explain(how=f"Models learn from <b>{ntr:,}</b> claims ({tr_pos*100:.1f}% repudiated) and are scored on <b>{nte:,}</b> they have not seen ({te_pos*100:.1f}% repudiated). Both groups keep the same outcome mix. Change the split in Model settings.",
-            caution="Decision Tree and Random Forest give the rarer outcome extra weight, which usually raises recall. KNN and Gradient Boosting do not, so compare their scores with that in mind.")
-
-    metrics = pd.DataFrame({
-        m: {"Train Acc": r["train_acc"], "Test Acc": r["test_acc"],
-            "Precision": r["precision"], "Recall": r["recall"],
-            "F1": r["f1"], "ROC-AUC": r["roc_auc"],
-            "Overfit gap": r["train_acc"] - r["test_acc"]}
-        for m, r in results.items()
-    }).T.round(3)
-    st.subheader("Metric comparison (test set)")
-    st.dataframe(metrics.style.highlight_max(axis=0, subset=["Test Acc", "Precision",
-                 "Recall", "F1", "ROC-AUC"], color="#d4efdf")
-                 .highlight_max(axis=0, subset=["Overfit gap"], color="#f5b7b1").format("{:.3f}"),
-                 width='stretch')
-
-    best = metrics["ROC-AUC"].idxmax()
-    baseline = max(te_pos, 1 - te_pos)
-    best_acc = metrics["Test Acc"].idxmax()
-    largest_gap, smallest_gap = metrics["Overfit gap"].idxmax(), metrics["Overfit gap"].idxmin()
-    explain(how="Green marks the best score in each column. Red marks the largest overfit gap.",
-            data=(f"<b>{e(best)}</b> ranks claims best, with ROC-AUC {metrics.loc[best, 'ROC-AUC']:.3f}. "
-                  f"<b>{e(best_acc)}</b> has the top test accuracy at {metrics.loc[best_acc, 'Test Acc']*100:.1f}%, against {baseline*100:.1f}% from always predicting the more common outcome. "
-                  f"<b>{e(largest_gap)}</b> has the largest overfit gap ({metrics.loc[largest_gap, 'Overfit gap']:.3f}) and <b>{e(smallest_gap)}</b> the smallest ({metrics.loc[smallest_gap, 'Overfit gap']:.3f})."),
-            caution="Accuracy alone can mislead when one outcome is more common, so read it with recall and ROC-AUC.")
-
-    st.subheader("Per-model classification report")
-    pick = st.selectbox("Model", list(results.keys()), index=2)
-    explain(how="Scores for each outcome separately, 0 to 1. <b>Support</b> is the number of test claims with that outcome. <b>Macro avg</b> treats both outcomes equally, and <b>weighted avg</b> accounts for how common each one is.",
-            data=f"<b>{e(pick)}</b> catches {results[pick]['recall']*100:.0f}% of repudiated test claims, and {results[pick]['precision']*100:.0f}% of the claims it flags as repudiated really were.")
-    st.code(results[pick]["report"])
-    st.session_state["results"] = results   # share with eval tab
-
-# ============================== TAB 5 — EVALUATION =========================
-if view == "Evaluation":
-    st.header("Model Evaluation — Stability & Errors")
-    page_intro("The ROC, metric and confusion charts use test claims the models never saw during training, so they show how each model handles new claims. Feature importance shows what the Random Forest learned from its training claims.")
-    X, y, num, cat = build_design_matrix(df, zone_top, state_top, occ_top, reason_top)
-    results, _ = train_models(X, y, num, cat, test_size, int(seed))
-
-    st.subheader("ROC curves")
-    best_auc = max(results, key=lambda m: results[m]["roc_auc"])
-    explain(how="Each curve shows the trade-off as a model flags more claims: catching more repudiations (up) at the cost of more false alarms on approved claims (right). Closer to the top-left is better. The dashed diagonal is random guessing.",
-            data=f"<b>{e(best_auc)}</b> has the highest AUC at {results[best_auc]['roc_auc']:.3f}, the area under its curve. Hover over a curve for exact rates.",
-            caution="A model scoring above 0.5 shows outcomes are partly predictable from these attributes. It does not show why, or whether the decisions were fair.")
-    roc_chart(results)
-
-    st.subheader("Metric comparison")
-    top_recall = max(results, key=lambda m: results[m]["recall"])
-    top_precision = max(results, key=lambda m: results[m]["precision"])
-    explain(how="Taller is better. Definitions are on the Models page. Favour recall when missing a repudiation costs most, and precision when a false flag costs most.",
-            data=f"<b>{e(top_recall)}</b> has the highest recall at {results[top_recall]['recall']:.2f}, and <b>{e(top_precision)}</b> the highest precision at {results[top_precision]['precision']:.2f}.")
-    metric_chart(results)
-
-    st.subheader("Confusion matrices (test set)")
-    largest = max(int(r["cm"].max()) for r in results.values())
-    fewest_missed = min(results, key=lambda m: results[m]["cm"][1, 0])
-    missed_cm = results[fewest_missed]["cm"]
-    explain(how="Rows are what actually happened and columns are what the model predicted. The top-left and bottom-right cells are correct. <b>Bottom-left</b> is a repudiation the model missed, and <b>top-right</b> is an approved claim it wrongly flagged. All four share one colour scale, and darker means more claims.",
-            data=f"<b>{e(fewest_missed)}</b> misses the fewest repudiations, {missed_cm[1, 0]:,} of {missed_cm[1].sum():,}, while wrongly flagging {missed_cm[0, 1]:,} of {missed_cm[0].sum():,} approved claims.")
-    cols = st.columns(2)
-    for i, (name, r) in enumerate(results.items()):
-        with cols[i % 2]:
-            confusion_chart(name, r, largest)
-
-    # feature importance (RF)
-    st.subheader("Feature importance (Random Forest)")
-    rf = results["Random Forest"]["pipe"]
-    ohe = rf.named_steps["pre"].named_transformers_["cat"].named_steps["oh"]
-    X, y, num, cat = build_design_matrix(df, zone_top, state_top, occ_top, reason_top)
-    feat = num + list(ohe.get_feature_names_out(cat))
-    imp = pd.Series(rf.named_steps["clf"].feature_importances_, index=feat)
-    by_field = imp.groupby([next((c for c in cat if name.startswith(c + "_")), name) for name in imp.index]).sum().sort_values(ascending=False)
-    imp = imp.sort_values(ascending=False).head(15)
-    explain(how="The 15 inputs the Random Forest relied on most. Each category is its own input, written as field_category, such as ZONE_AGENCY. Importance adds up to 1 across all inputs.",
-            data="Added up by field, the largest shares belong to " + ", ".join(f"<b>{e(name)}</b> ({share*100:.0f}%)" for name, share in by_field.head(3).items()) + ".",
-            caution="Importance shows what the model used, not what caused an outcome. Fields such as REASON_FOR_CLAIM and EARLY_NON may reflect information from the claim itself, which can make models look stronger than they would be earlier in the process.")
-    value_bars(imp.index, imp.values, "Importance", fmt=".3f")
-
-# ============================== TAB 6 — FINDINGS ===========================
-if view == "Findings":
-    st.header("Findings & Recommendations")
-    page_intro("The main takeaways from the current dataset and what to check next. The figures recalculate if you upload a different file.")
-    st.write(f"Of {len(df):,} claims, {int(df.REPUDIATED.sum()):,} were repudiated ({overall:.1%}).")
-    group = df.groupby("ZONE").REPUDIATED.agg(["mean", "count"])
-    eligible = group[group["count"] >= 20].sort_values("mean")
-    if len(eligible) >= 2:
-        st.write(f"Among teams with at least 20 claims, repudiation ranges from {eligible['mean'].min():.1%} to {eligible['mean'].max():.1%}. Compare case mix and documented grounds before interpreting this gap.")
-    else:
-        st.info("Too few teams have 20 claims for a stable team comparison.")
-    st.write(f"Annual income is missing or zero for {(df.PI_ANNUAL_INCOME.fillna(0) <= 0).mean():.1%} of records. Treat income comparisons cautiously.")
-    st.subheader("Audit next steps")
-    st.markdown("""1. **Review a stratified sample from teams with high and low repudiation rates.** Sampling from both ends shows whether similar claims are being decided differently.
+            st.info("Too few teams have 20 claims for a stable team comparison.")
+        st.write(f"Annual income is missing or zero for {(df.PI_ANNUAL_INCOME.fillna(0) <= 0).mean():.1%} of records. Treat income comparisons cautiously.")
+        st.subheader("Audit next steps")
+        st.markdown("""1. **Review a stratified sample from teams with high and low repudiation rates.** Sampling from both ends shows whether similar claims are being decided differently.
 2. **Verify documented policy grounds and case mix with an independent reviewer.** The dataset has no record of why each claim was declined, and case mix means the kinds of policy and claim a team handles.
 3. **Improve missing income capture before drawing income-related conclusions.** Comparisons only cover claims with income recorded.
 4. **Compare models with and without geography and processing-channel attributes.** If accuracy drops sharply without them, outcomes depend heavily on where a claim was handled.""")
-    explain(caution="Disparities are leads for audit, not proof of bias. This dataset does not establish whether each repudiation was justified, so a high rate may reflect different risks or inconsistent decisions.")
-    st.caption("The cleaned dataset includes the merged team names and two added columns: INCOME_MISSING flags unrecorded income, and REPUDIATED marks declined claims with 1.")
-    st.download_button("Download cleaned dataset (CSV)", df.to_csv(index=False).encode(), "insurance_cleaned.csv", "text/csv",
-                       icon=":material/download:", on_click=download_feedback)
+        explain(caution="Disparities are leads for audit, not proof of bias. This dataset does not establish whether each repudiation was justified, so a high rate may reflect different risks or inconsistent decisions.")
+        st.caption("The cleaned dataset includes the merged team names and two added columns: INCOME_MISSING flags unrecorded income, and REPUDIATED marks declined claims with 1.")
+        st.download_button("Download cleaned dataset (CSV)", df.to_csv(index=False).encode(), "insurance_cleaned.csv", "text/csv",
+                           icon=":material/download:", on_click=download_feedback)
 
-st.caption("Built with Streamlit + scikit-learn · disparities ≠ proof of bias · "
-           "validate against documented repudiation grounds before acting.")
+    st.caption("Built with Streamlit + scikit-learn · disparities ≠ proof of bias · "
+               "validate against documented repudiation grounds before acting.")
+
+mark_rendered()

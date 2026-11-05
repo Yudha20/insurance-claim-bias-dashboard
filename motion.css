@@ -1,0 +1,105 @@
+/* ---------- Elements that carry motion but take no space ---------- */
+[data-testid=stElementContainer]:has(script),
+[data-testid=stElementContainer]:has(#cs-rendered) {display:none!important;}
+[data-testid=stElementContainer]:has(.cs-boot) {position:absolute;width:0;height:0;min-height:0;margin:0;padding:0;overflow:visible;}
+/* Sits exactly where the page body starts: zero height, and the -24px cancels the column gap. */
+[data-testid=stElementContainer]:has(.cs-sk-layer) {height:0;min-height:0;margin-bottom:-24px;overflow:visible;position:relative;z-index:1;}
+.st-key-page_view {gap:24px!important;}
+
+/* Streamlit dims stale elements during a rerun. Page changes are hidden and revealed
+   as one unit instead, and a brief dim on filter changes only reads as flicker. */
+[data-testid=stElementContainer][data-stale=true] {opacity:1!important;}
+
+/* ---------- Page transition states (set by motion.js) ---------- */
+html.cs-hold .st-key-page_view {opacity:0!important;pointer-events:none;}
+.cs-sk-layer {position:absolute;top:0;left:0;right:0;pointer-events:none;}
+.cs-sk-page {display:none;}
+.cs-sk-page.is-on {display:block;}
+
+/* ---------- Bones ---------- */
+.cs-boot,.cs-sk-layer {--bone:#eef0f3;--bone-glint:#f8f9fb;}
+.sk-bone {flex:none;max-width:100%;background-color:var(--bone);background-image:linear-gradient(100deg,var(--bone) 40%,var(--bone-glint) 50%,var(--bone) 60%);background-size:200vw 100%;background-attachment:fixed;animation:cs-shimmer 1.8s linear infinite;}
+@keyframes cs-shimmer {from {background-position:100vw 0;} to {background-position:-100vw 0;}}
+.sk-stack {display:flex;flex-direction:column;min-width:0;}
+.sk-cols {display:grid;gap:16px;min-width:0;align-items:start;}
+.sk-line,.sk-h {display:flex;align-items:center;min-width:0;}
+.sk-intro {max-width:800px;}
+.sk-explain {display:grid;grid-template-columns:96px minmax(0,1fr);gap:8px 12px;max-width:880px;}
+.sk-control {display:flex;flex-direction:column;min-width:0;}
+.sk-card {background:#fff;border:1px solid var(--line);border-radius:12px;padding:15px;}
+.sk-table {box-sizing:border-box;overflow:hidden;background:#fff;border:1px solid var(--line);border-radius:8px;}
+.sk-row {display:flex;box-sizing:border-box;border-bottom:1px solid var(--line);}
+.sk-cell {box-sizing:border-box;display:flex;align-items:center;min-width:0;padding:0 8px;border-right:1px solid var(--line);}
+.sk-cell:last-child {border-right:0;}
+.sk-chart {box-sizing:border-box;background:#fff;padding:12px 16px;overflow:hidden;}
+.sk-hbars {display:flex;flex-direction:column;justify-content:space-around;gap:6px;}
+.sk-hbar {flex:1;min-height:0;max-height:32px;display:grid;grid-template-columns:18% minmax(0,1fr);gap:12px;align-items:center;}
+.sk-hbar>div:last-child {height:100%;}
+.sk-vbars {display:flex;align-items:flex-end;gap:7%;padding:24px 8% 32px;border-bottom:0;}
+.sk-vbars>div {flex:1;height:100%;display:flex;align-items:flex-end;min-width:0;}
+.sk-curves {position:relative;margin:0;}
+.sk-curves i {position:absolute;border-top:3px solid var(--bone);border-left:3px solid var(--bone);border-top-left-radius:100%;}
+.sk-matrix {display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:4px;padding:32px 20% 28px;}
+.sk-tabs {display:flex;gap:24px;align-items:center;height:40px;border-bottom:1px solid var(--line);}
+.sk-code {background:#f6f7f9;border-radius:12px;padding:16px;height:198px;box-sizing:border-box;}
+.sk-list {display:flex;flex-direction:column;justify-content:space-between;padding-left:24px;box-sizing:border-box;}
+
+/* ---------- Full-page first paint ---------- */
+.cs-boot {position:fixed;inset:0;z-index:1004;background:#fafafa;overflow:hidden;--boot-nav:240px;}
+.sk-side {position:absolute;top:0;left:0;bottom:0;width:var(--boot-nav);box-sizing:border-box;background:#fff;border-right:1px solid var(--line);}
+.sk-brand {position:absolute;left:22px;top:30px;display:flex;align-items:center;gap:12px;}
+.sk-nav {position:absolute;top:76px;left:8px;right:8px;display:flex;flex-direction:column;gap:4px;}
+.sk-nav-row {height:40px;display:flex;align-items:center;gap:12px;padding:0 14px;}
+.sk-main {position:absolute;top:0;right:0;bottom:0;left:var(--boot-nav);overflow:hidden;}
+.sk-main>.sk-stack {box-sizing:border-box;max-width:1600px;margin:0 auto;padding:24px 24px 32px;}
+.sk-header {display:flex;justify-content:space-between;align-items:center;height:36px;gap:16px;}
+.sk-actions {display:flex;gap:8px;}
+.sk-kpis {display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;margin-top:8px;}
+.sk-kpi {height:144px;min-height:144px;}
+.sk-kpi:hover {box-shadow:none;border-color:var(--line);}
+.sk-kpi-note {display:flex;align-items:center;gap:8px;margin-top:10px;}
+html.cs-ready .cs-boot {pointer-events:none;animation:cs-boot-out .34s cubic-bezier(.3,0,.2,1) forwards;}
+html.cs-booted .cs-boot {display:none;}
+@keyframes cs-boot-out {to {opacity:0;visibility:hidden;}}
+/* Without JavaScript the overlay still clears once the page has rendered. */
+[data-testid=stApp]:has(#cs-rendered) .cs-boot {animation:cs-boot-out .3s 5s forwards;}
+html.cs-ready [data-testid=stApp]:has(#cs-rendered) .cs-boot {animation:cs-boot-out .34s cubic-bezier(.3,0,.2,1) forwards;}
+@media(prefers-reduced-motion:reduce) {[data-testid=stApp]:has(#cs-rendered) .cs-boot {display:none;}}
+
+@media(max-width:900px) {
+  .cs-boot {overflow:hidden;}
+  .sk-side {right:0;bottom:auto;width:100%;height:56px;border-right:0;border-bottom:1px solid var(--line);overflow:hidden;}
+  .sk-brand {display:none;}
+  .sk-nav {position:static;flex-direction:row;padding:8px;}
+  .sk-main {left:0;}
+  .sk-main>.sk-stack {padding:80px 16px 24px;}
+}
+/* Real columns stay side by side on phones, so the bones do too. */
+@media(max-width:640px) {
+  .sk-header {height:auto;align-items:center;}
+  .sk-header>div:first-child {flex:1;min-width:0;}
+  .sk-actions {flex-direction:column;align-items:flex-end;}
+  .sk-kpi {height:440px;padding:24px;}
+  .sk-explain {grid-template-columns:minmax(0,1fr);gap:4px;}
+}
+
+/* ---------- Liquid-glass navigation pill ---------- */
+html.cs-js [data-testid=stSidebarUserContent] {position:relative;}
+.cs-pill {position:absolute;top:0;left:0;z-index:0;pointer-events:none;box-sizing:border-box;border-radius:14px;transform-origin:50% 50%;will-change:transform;
+  background:linear-gradient(145deg,#ffffffd9 0%,#ffffff4d 46%,#e6ebff73 100%),#365cff1a;
+  -webkit-backdrop-filter:blur(10px) saturate(180%);backdrop-filter:blur(10px) saturate(180%);
+  border:1px solid #ffffffb3;
+  box-shadow:0 1px 2px #2c344814,0 6px 18px #365cff24,inset 0 1px 0 #ffffffe6,inset 0 -1px 1px #365cff1a;}
+.cs-pill::after {content:'';position:absolute;left:8%;right:8%;top:2px;height:38%;border-radius:12px 12px 50% 50%;background:linear-gradient(180deg,#ffffffb3,#fff0);pointer-events:none;}
+html.cs-js [data-testid=stSidebarUserContent] [data-testid=stElementContainer] {position:relative;z-index:1;}
+html.cs-js [data-testid=stSidebarUserContent] button[kind=primary]::before {display:none;}
+html.cs-js [data-testid=stSidebarUserContent] button,
+html.cs-js [data-testid=stSidebarUserContent] button[kind=primary] {color:#5f636b!important;transition:color .22s ease,transform .5s var(--cs-spring,cubic-bezier(.34,1.4,.64,1));}
+html.cs-js [data-testid=stSidebarUserContent] button:hover {color:var(--ink)!important;}
+html.cs-js [data-testid=stSidebarUserContent] button p,
+html.cs-js [data-testid=stSidebarUserContent] button[kind=primary] p {font-weight:400!important;}
+
+/* A press compresses, then springs back on release. */
+[data-testid=stSidebarUserContent] button:active,
+.st-key-header_actions button:active {transform:scale(.96);transition-duration:.08s!important;}
+.st-key-header_actions button {transition:background .12s,border-color .12s,transform .5s var(--cs-spring,cubic-bezier(.34,1.4,.64,1));}
