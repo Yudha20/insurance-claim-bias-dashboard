@@ -112,3 +112,4 @@ button:focus-visible,input:focus-visible {outline:2px solid var(--accent);outlin
 [data-testid=stApp]:has(#claims-navigation:not(:checked)) .page-title,
 [data-testid=stApp]:has(#claims-navigation:not(:checked)) .page-subtitle {padding-left:48px;}
 [data-testid=stElementContainer]:has(#claims-navigation) {height:0;min-height:0;margin:0;}
+[data-testid=stElementContainer]:has(#claims-navigation) {position:absolute;width:0;height:0;min-height:0;margin:0;padding:0;overflow:visible;}
