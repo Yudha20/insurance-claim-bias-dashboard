@@ -241,7 +241,10 @@ except (ValueError, OSError, UnicodeError, pd.errors.ParserError) as exc:
 if "model_config" not in st.session_state:
     st.session_state.model_config = dict(test_size=.25, seed=42, zone_top=15, state_top=15, occ_top=12, reason_top=12)
 
-@st.dialog("Model settings", width="medium")
+def close_model_settings():
+    st.session_state.settings_open = False
+
+@st.dialog("Model settings", width="medium", on_dismiss=close_model_settings)
 def model_settings_dialog():
     cfg = st.session_state.model_config
     st.caption("Configure the training split and feature preparation. Changes apply only when saved.")
@@ -258,6 +261,7 @@ def model_settings_dialog():
         reasons = right.number_input("Claim reasons", min_value=5, max_value=25, value=cfg["reason_top"])
         if st.form_submit_button("Apply settings", type="primary", icon=":material/check:"):
             st.session_state.model_config = dict(test_size=split, seed=random_seed, zone_top=zones, state_top=states, occ_top=occupations, reason_top=reasons)
+            st.session_state.settings_open = False
             st.rerun()
 
 cfg = st.session_state.model_config
@@ -265,7 +269,9 @@ test_size, seed, zone_top, state_top, occ_top, reason_top = [cfg[k] for k in ["t
 with action_bar:
     st.download_button("Export claims", df.to_csv(index=False).encode(), "claims.csv", "text/csv", type="primary", icon=":material/download:", width="content")
     if st.button("Model settings", icon=":material/tune:", key="open_model_settings", width="content"):
-        model_settings_dialog()
+        st.session_state.settings_open = True
+if st.session_state.get("settings_open", False):
+    model_settings_dialog()
 overall = df["REPUDIATED"].mean()
 for i, (col, label, value, tag, note) in enumerate(zip(st.columns(4),
     ["Total claims", "Approved claims", "Repudiated claims", "Income recorded"],
