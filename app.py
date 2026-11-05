@@ -202,6 +202,12 @@ def cramers_v(df, col, target="REPUDIATED"):
 # Sidebar
 # ----------------------------------------------------------------------------
 # A persistent rail uses the same navigation controls in both sizes.
+def download_feedback():
+    st.toast("CSV download started.", icon=":material/download:")
+
+if st.session_state.pop("settings_saved", False):
+    st.toast("Settings applied.", icon=":material/check:")
+
 if "nav_pinned" not in st.session_state: st.session_state.nav_pinned = False
 if "active_view" not in st.session_state: st.session_state.active_view = "Claims"
 compact = not st.session_state.nav_pinned
@@ -275,12 +281,13 @@ def model_settings_dialog():
         if st.form_submit_button("Apply settings", type="primary", icon=":material/check:"):
             st.session_state.model_config = dict(test_size=split, seed=random_seed, zone_top=zones, state_top=states, occ_top=occupations, reason_top=reasons)
             st.session_state.settings_open = False
+            st.session_state.settings_saved = True
             st.rerun()
 
 cfg = st.session_state.model_config
 test_size, seed, zone_top, state_top, occ_top, reason_top = [cfg[k] for k in ["test_size", "seed", "zone_top", "state_top", "occ_top", "reason_top"]]
 with action_bar:
-    st.download_button("Export claims", df.to_csv(index=False).encode(), "claims.csv", "text/csv", type="primary", icon=":material/download:", width="content")
+    st.download_button("Export claims", df.to_csv(index=False).encode(), "claims.csv", "text/csv", on_click=download_feedback, type="primary", icon=":material/download:", width="content")
     if st.button("Model settings", icon=":material/tune:", key="open_model_settings", width="content"):
         st.session_state.settings_open = True
 if st.session_state.get("settings_open", False):
@@ -312,9 +319,9 @@ if view == "Claims":
             st.info("No claims match these filters. Clear the search or choose All outcomes and All states.")
         else:
             display = filtered[["PI_NAME", "POLICY_NO", "PI_STATE", "PI_AGE", "SUM_ASSURED", "POLICY_STATUS"]].rename(columns={"PI_NAME":"Policyholder", "POLICY_NO":"Policy number", "PI_STATE":"State", "PI_AGE":"Age", "SUM_ASSURED":"Sum assured", "POLICY_STATUS":"Outcome"})
-            st.dataframe(display, hide_index=True, width="stretch", height=560, row_height=48,
+            st.dataframe(display, hide_index=True, width="stretch", height=560, row_height=48, key=f"claims_table_{compact}",
                          column_config={"Sum assured":st.column_config.NumberColumn(format="localized"), "Age":st.column_config.NumberColumn(format="%d")})
-            st.download_button("Export matching claims", filtered.to_csv(index=False).encode(), "filtered_claims.csv", "text/csv")
+            st.download_button("Export matching claims", filtered.to_csv(index=False).encode(), "filtered_claims.csv", "text/csv", on_click=download_feedback)
         with st.expander("Data quality notes"):
             for n in notes: st.write(n)
 
@@ -598,7 +605,7 @@ if view == "Findings":
 4. Compare models with and without geography and processing-channel attributes.""")
     st.info("Disparities are leads for audit, not proof of bias. This dataset does not establish whether each repudiation was justified.")
     st.download_button("⬇️ Download cleaned dataset (CSV)",
-                       df.to_csv(index=False).encode(), "insurance_cleaned.csv", "text/csv")
+                       df.to_csv(index=False).encode(), "insurance_cleaned.csv", "text/csv", on_click=download_feedback)
 
 st.caption("Built with Streamlit + scikit-learn · disparities ≠ proof of bias · "
            "validate against documented repudiation grounds before acting.")

@@ -16,7 +16,7 @@ html,body,[data-testid=stApp] {font-family:"Product Sans",Arial,sans-serif;color
 [data-testid=stSidebar] button [data-testid=stIconMaterial] {font-size:20px;min-width:20px;}
 [data-testid=stSidebar] button p {font-size:13px;}
 [data-testid=stSidebar] button[kind=primary] {background:transparent;color:var(--accent);}
-[data-testid=stSidebar] button:hover {color:#25282d;background:transparent;border:0;}
+[data-testid=stSidebar] button:hover {color:#34373c!important;background:transparent;border:0;}
 .st-key-toggle_rail {margin-bottom:12px;}
 .st-key-toggle_rail button {height:40px;color:#45484e;}
 h1,h2,h3,.page-title {color:var(--ink);font-weight:500;letter-spacing:-.4px;}
@@ -59,3 +59,18 @@ button:focus-visible,input:focus-visible {outline:2px solid var(--accent);outlin
 .kpi-label {margin-bottom:12px;}
 [data-testid=stDialog] [role=dialog],[data-testid=stPopoverBody] {border-radius:12px!important;}
 @media(prefers-reduced-motion:reduce) {[data-testid=stSidebar] {transition:none!important;}}
+
+/* Controls have one perimeter; nested dropdown arrows are not separate buttons. */
+[data-baseweb=select] button {min-height:0!important;border:0!important;outline:none!important;box-shadow:none!important;background:transparent!important;border-radius:0!important;filter:none!important;}
+[data-baseweb=select]>div {box-shadow:none!important;border:1px solid #e1e3e8!important;}
+[data-baseweb=select]:focus-within>div {border-color:#365cff!important;}
+[data-testid=stTextInput] input {outline:none!important;box-shadow:none!important;border:0!important;}
+[data-testid=stTextInput]>div>div {border:1px solid #e1e3e8;box-shadow:none!important;}
+[data-testid=stTextInput]:focus-within>div>div {border-color:#365cff;}
+[data-testid=stSidebar] button {color:#92969d;}
+[data-testid=stSidebar] button[kind=primary] {color:#365cff;}
+.st-key-toggle_rail button:hover [data-testid=stIconMaterial] {font-size:0!important;}
+.st-key-toggle_rail button:hover [data-testid=stIconMaterial]::after {content:'›';font-family:"Product Sans",sans-serif;font-size:24px;line-height:20px;}
+[data-testid=stMain], [data-testid=stMainBlockContainer], [data-testid=stColumn] {min-width:0;}
+[data-testid=stDataFrame] {contain:inline-size;max-width:100%;}
+[data-testid=stToast] {font-family:"Product Sans",sans-serif;font-size:13px;border-radius:12px;}
