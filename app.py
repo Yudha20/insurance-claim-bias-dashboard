@@ -224,16 +224,11 @@ compact = not st.session_state.nav_pinned
 rail_width = 0 if compact else 240
 st.markdown("<style>[data-testid=stSidebar]{width:%dpx!important;min-width:%dpx!important;max-width:%dpx!important;}</style>" % (rail_width,rail_width,rail_width), unsafe_allow_html=True)
 if compact:
-    st.markdown("""<style>
-    [data-testid=stSidebar] {background:transparent!important;border:0!important;overflow:visible!important;pointer-events:none;}
-    [data-testid=stSidebarContent],[data-testid=stSidebarUserContent] {overflow:visible!important;width:0!important;padding:0!important;}
-    .st-key-toggle_rail {position:fixed;left:16px;top:20px;width:40px!important;z-index:1001;pointer-events:auto;}
-    .st-key-toggle_rail button {width:40px!important;padding:8px!important;}
-    .page-title,.page-subtitle {padding-left:48px;}
-    </style>""", unsafe_allow_html=True)
-if st.sidebar.button("" if compact else "ClaimScope", icon=":material/shield:", key="toggle_rail", width="stretch"):
-    st.session_state.nav_pinned = compact
-    st.rerun()
+    st.markdown("<style>[data-testid=stSidebar]{display:none!important;}</style>", unsafe_allow_html=True)
+else:
+    if st.sidebar.button("ClaimScope", icon=":material/shield:", key="toggle_rail", width="stretch"):
+        st.session_state.nav_pinned = False
+        st.rerun()
 nav = [("Claims", "table_view", "Search, filter, and export claim records"),
        ("Overview", "space_dashboard", "Compare outcomes across policyholder groups"),
        ("Disparities", "query_stats", "Explore differences and income distribution"),
@@ -248,7 +243,14 @@ for name, icon, detail in ([] if compact else nav):
         st.rerun()
 view = st.session_state.active_view
 
-head, actions = st.columns([1.2, 1], gap="small", vertical_alignment="center")
+if compact:
+    brand, head, actions = st.columns([0.08, 1.12, 1], gap="small", vertical_alignment="center")
+    with brand:
+        if st.button("", icon=":material/shield:", key="toggle_rail", width="content"):
+            st.session_state.nav_pinned = True
+            st.rerun()
+else:
+    head, actions = st.columns([1.2, 1], gap="small", vertical_alignment="center")
 with head:
     st.markdown('<div class="page-title">Insurance claims dashboard</div><div class="page-subtitle">Review outcomes, explore disparities, and evaluate predictive models.</div>', unsafe_allow_html=True)
 with actions:
@@ -329,7 +331,7 @@ if view == "Claims":
             st.info("No claims match these filters. Clear the search or choose All outcomes and All states.")
         else:
             display = filtered[["PI_NAME", "POLICY_NO", "PI_STATE", "PI_AGE", "SUM_ASSURED", "POLICY_STATUS"]].rename(columns={"PI_NAME":"Policyholder", "POLICY_NO":"Policy number", "PI_STATE":"State", "PI_AGE":"Age", "SUM_ASSURED":"Sum assured", "POLICY_STATUS":"Outcome"})
-            st.dataframe(display, hide_index=True, width="stretch", height=560, row_height=48, key=f"claims_table_{compact}",
+            st.dataframe(display, hide_index=True, width="stretch", height=560, row_height=48, key="claims_table",
                          column_config={"Sum assured":st.column_config.NumberColumn(format="localized"), "Age":st.column_config.NumberColumn(format="%d")})
             st.download_button("Export matching claims", filtered.to_csv(index=False).encode(), "filtered_claims.csv", "text/csv", on_click=download_feedback)
         with st.expander("Data quality notes"):

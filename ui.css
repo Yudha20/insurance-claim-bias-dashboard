@@ -5,7 +5,7 @@ html,body,[data-testid=stApp] {font-family:"Product Sans",Arial,sans-serif;color
 [data-testid=stMainBlockContainer] {padding:24px 24px 32px;max-width:1600px;}
 [data-testid=stElementContainer]:has(style) {display:none;}
 [data-testid=stVerticalBlock] {gap:16px;}
-[data-testid=stSidebar] {background:white;border-right:1px solid var(--line);transition:width 200ms ease,min-width 200ms ease,max-width 200ms ease;overflow:hidden;}
+[data-testid=stSidebar] {background:white;border-right:1px solid var(--line);transition:none;overflow:hidden;}
 [data-testid=stSidebarHeader],[data-testid=stSidebarCollapsedControl] {display:none;}
 [data-testid=stSidebarContent] {padding:0!important;}
 [data-testid=stSidebarUserContent] {padding:20px 8px 12px!important;}
@@ -85,3 +85,10 @@ button:focus-visible,input:focus-visible {outline:2px solid var(--accent);outlin
 [data-testid=stApp] small,[data-testid=stCaptionContainer] p {font-size:12px!important;}
 
 @media(max-width:900px) {[data-testid=stSidebarUserContent] {padding-top:20px!important;}}
+
+/* The collapsed control lives in the header, never inside a zero-width sidebar. */
+.st-key-toggle_rail button {width:40px;min-width:40px;padding:8px!important;background:transparent;border:0;box-shadow:none;}
+[data-testid=stSidebar] .st-key-toggle_rail button {width:100%;}
+.st-key-toggle_rail {margin-bottom:0;}
+[data-testid=stSidebar] .st-key-toggle_rail {margin-bottom:12px;}
+.st-key-toggle_rail button:hover {background:#f0f1f3;border:0;}
