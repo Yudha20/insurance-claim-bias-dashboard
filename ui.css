@@ -45,3 +45,7 @@ button:focus-visible,input:focus-visible {outline:2px solid var(--accent);outlin
 [data-testid=stDataFrame] {border:1px solid var(--line);overflow:hidden;}
 @media(max-width:900px) {[data-testid=stMainBlockContainer] {padding:72px 16px 24px;} .st-key-header_actions [data-testid=stHorizontalBlock] {justify-content:flex-start;}}
 @media(prefers-reduced-motion:reduce) {*,*::before,*::after {transition:none!important;animation:none!important;}}
+.st-key-header_actions {gap:8px!important;}
+[data-testid=stMarkdownContainer] h1 {font-size:28px!important;font-weight:500!important;}
+[data-testid=stMarkdownContainer] h2 {font-size:20px!important;font-weight:500!important;}
+[data-testid=stMarkdownContainer] h3 {font-size:18px!important;font-weight:500!important;}
