@@ -8,7 +8,7 @@ html,body,[data-testid=stApp] {font-family:"Product Sans",Arial,sans-serif;color
 h1,h2,h3,.page-title {color:var(--ink);font-weight:500;letter-spacing:-.4px;}
 h1 {font-size:28px;} h2 {font-size:20px;} h3 {font-size:18px;}
 p,label,input,button {font-size:13px;}
-small,[data-testid=stCaptionContainer] {font-size:12px;color:#85888f;}
+small,[data-testid=stCaptionContainer] {font-size:12px;color:#6b6f76;}
 .page-title {font-size:20px;line-height:28px;}
 .page-subtitle {font-size:12px;color:#7d8188;line-height:20px;margin-top:4px;}
 .kpi {box-sizing:border-box;background:#fff;border:1px solid var(--line);border-radius:12px;padding:20px;min-height:144px;transition:box-shadow .16s ease,border-color .16s ease;}
@@ -120,3 +120,16 @@ button:focus-visible,input:focus-visible {outline:2px solid var(--accent);outlin
   [data-testid=stMain] {margin-left:0;width:100%;}
   [data-testid=stMainBlockContainer] {padding-top:80px;}
 }
+
+/* Explanations: one quiet style, using the same tag treatment as the KPI cards. */
+[data-testid=stMarkdownContainer] li {font-size:13px;line-height:20px;margin-bottom:8px;}
+.page-intro {max-width:800px;font-size:14px;line-height:22px;color:#4f535a;}
+.explain {display:grid;grid-template-columns:96px minmax(0,1fr);gap:8px 12px;max-width:880px;font-size:13px;line-height:20px;color:#5f636b;}
+.explain-label {justify-self:start;align-self:start;font-size:12px;line-height:20px;white-space:nowrap;padding:0 8px;border-radius:4px;background:#eef2ff;color:#4a5db0;}
+.explain b,.page-intro b,.glossary-term {color:var(--ink);font-weight:700;}
+.glossary {display:grid;grid-template-columns:140px minmax(0,1fr);gap:8px 16px;font-size:13px;line-height:20px;color:#5f636b;}
+@media(max-width:640px) {
+  .explain,.glossary {grid-template-columns:minmax(0,1fr);gap:4px;}
+  .explain-text,.glossary-text {margin-bottom:8px;}
+}
+
