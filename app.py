@@ -289,7 +289,8 @@ st.markdown("""<style>
 .st-key-toggle_rail button:hover [data-testid="stIconMaterial"]::after {content:'›';font-family:Arial,sans-serif;font-size:28px;line-height:24px;}
 [data-testid="stButton"] button:hover,[data-testid="stDownloadButton"] button:hover,[data-testid="stPopover"] button:hover {border-color:#b3b6be!important;filter:brightness(.94);box-shadow:none!important;}
 [data-testid="stSidebar"] button:hover {filter:none!important;}
-[data-testid="stMainBlockContainer"] {padding-top:80px!important;}
+[data-testid="stMainBlockContainer"] {padding-top:64px!important;}
+.kpi {margin-bottom:16px;}
 </style>""", unsafe_allow_html=True)
 # A persistent rail uses the same navigation controls in both sizes.
 if "rail_compact" not in st.session_state: st.session_state.rail_compact = True
