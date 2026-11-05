@@ -1,14 +1,14 @@
 :root {--space:4px;--ink:#34373c;--muted:#757980;--line:#e9eaed;--accent:#365cff;--radius:12px;}
 html,body,[data-testid=stApp] {font-family:"Product Sans",Arial,sans-serif;color:var(--ink);}
 [data-testid=stAppViewContainer] {background:#fafafa;}
-[data-testid=stHeader] {background:#fff;border-bottom:1px solid var(--line);}
-[data-testid=stMainBlockContainer] {padding:80px 24px 32px;max-width:1600px;}
+[data-testid=stHeader] {display:none!important;}
+[data-testid=stMainBlockContainer] {padding:24px 24px 32px;max-width:1600px;}
 [data-testid=stElementContainer]:has(style) {display:none;}
 [data-testid=stVerticalBlock] {gap:16px;}
 [data-testid=stSidebar] {background:white;border-right:1px solid var(--line);transition:width 200ms ease,min-width 200ms ease,max-width 200ms ease;overflow:hidden;}
 [data-testid=stSidebarHeader],[data-testid=stSidebarCollapsedControl] {display:none;}
 [data-testid=stSidebarContent] {padding:0!important;}
-[data-testid=stSidebarUserContent] {padding:76px 8px 12px!important;}
+[data-testid=stSidebarUserContent] {padding:20px 8px 12px!important;}
 [data-testid=stSidebarUserContent]>div {padding:0!important;}
 [data-testid=stSidebar] [data-testid=stVerticalBlock] {gap:4px!important;padding:0!important;}
 [data-testid=stSidebar] button {justify-content:flex-start;min-height:36px;height:36px;padding:8px 12px;border:0;background:transparent;box-shadow:none;white-space:nowrap;}
@@ -43,7 +43,7 @@ button:focus-visible,input:focus-visible {outline:2px solid var(--accent);outlin
 [data-testid=stDialog] [role=dialog] {border-radius:12px;max-height:calc(100vh - 48px);overflow-y:auto;}
 [data-testid=stPopoverBody] {border-radius:12px;max-width:min(400px,calc(100vw - 32px));max-height:calc(100vh - 48px);overflow:auto;}
 [data-testid=stDataFrame] {border:1px solid var(--line);overflow:hidden;}
-@media(max-width:900px) {[data-testid=stMainBlockContainer] {padding:72px 16px 24px;} .st-key-header_actions [data-testid=stHorizontalBlock] {justify-content:flex-start;}}
+@media(max-width:900px) {[data-testid=stMainBlockContainer] {padding:24px 16px 24px;} .st-key-header_actions [data-testid=stHorizontalBlock] {justify-content:flex-start;}}
 @media(prefers-reduced-motion:reduce) {*,*::before,*::after {transition:none!important;animation:none!important;}}
 .st-key-header_actions {gap:8px!important;}
 [data-testid=stMarkdownContainer] h1 {font-size:28px!important;font-weight:500!important;}
@@ -84,4 +84,4 @@ button:focus-visible,input:focus-visible {outline:2px solid var(--accent);outlin
 [data-testid=stApp] :is(p,label,input,textarea,button,small,code,pre),[data-testid=stCaptionContainer],[role=option] {font-size:max(12px,.8125rem)!important;}
 [data-testid=stApp] small,[data-testid=stCaptionContainer] p {font-size:12px!important;}
 
-@media(max-width:900px) {[data-testid=stSidebarUserContent] {padding-top:68px!important;}}
+@media(max-width:900px) {[data-testid=stSidebarUserContent] {padding-top:20px!important;}}
