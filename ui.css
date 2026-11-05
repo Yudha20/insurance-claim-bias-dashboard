@@ -92,3 +92,5 @@ button:focus-visible,input:focus-visible {outline:2px solid var(--accent);outlin
 .st-key-toggle_rail {margin-bottom:0;}
 [data-testid=stSidebar] .st-key-toggle_rail {margin-bottom:12px;}
 .st-key-toggle_rail button:hover {background:#f0f1f3;border:0;}
+
+.st-key-toggle_rail [data-testid=stIconMaterial] {font-size:20px!important;min-width:20px;line-height:20px;}
