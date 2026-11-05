@@ -294,6 +294,9 @@ st.markdown("""<style>
 </style>""", unsafe_allow_html=True)
 st.markdown("""<style>
 :root {--space:4px;--radius:8px;}
+[data-testid="stElementContainer"]:has(style) {display:none!important;}
+[data-testid="stMainBlockContainer"] [data-testid="stLayoutWrapper"]:has(.kpi) {min-height:144px!important;}
+
 [data-testid="stSidebarUserContent"] {padding:12px 8px!important;overflow:hidden;}
 [data-testid="stSidebar"] [data-testid="stVerticalBlock"] {gap:4px!important;}
 [data-testid="stSidebar"] button {height:32px!important;min-height:32px!important;padding:4px 12px!important;gap:12px!important;border-radius:8px!important;white-space:nowrap;}
