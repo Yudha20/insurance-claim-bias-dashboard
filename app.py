@@ -294,6 +294,13 @@ st.markdown("""<style>
 </style>""", unsafe_allow_html=True)
 st.markdown("""<style>
 :root {--space:4px;--radius:8px;}
+[data-testid="stSidebarContent"] {padding:0!important;}
+[data-testid="stSidebarUserContent"]>div {padding:0!important;}
+[data-testid="stSidebar"] [data-testid="stVerticalBlock"] {padding-left:0!important;padding-right:0!important;}
+[data-testid="stSidebar"] button>div {min-width:0!important;}
+.st-key-nav_pinned {padding:4px 8px;}
+[data-testid="stSidebar"]:not(:hover):not(:focus-within) .st-key-nav_pinned {overflow:hidden;max-height:0;padding:0;visibility:hidden;}
+
 [data-testid="stSidebar"] button>div,[data-testid="stSidebar"] button>div>span {display:flex!important;width:100%;justify-content:flex-start!important;gap:12px!important;}
 [data-testid="stPopoverBody"] {max-height:calc(100vh - 48px);overflow-y:auto;}
 
@@ -325,13 +332,13 @@ button,input,[data-baseweb="select"]>div,[data-testid="stExpander"],[data-testid
 @media(max-width:768px) {[data-testid="stMainBlockContainer"] {padding:64px 16px 24px!important;} [data-testid="stSidebar"]:hover {box-shadow:none!important;}}
 </style>""", unsafe_allow_html=True)
 # A persistent rail uses the same navigation controls in both sizes.
-if "rail_compact" not in st.session_state: st.session_state.rail_compact = True
+if "nav_pinned" not in st.session_state: st.session_state.nav_pinned = False
 if "active_view" not in st.session_state: st.session_state.active_view = "Claims"
-compact = st.session_state.rail_compact
+compact = not st.session_state.nav_pinned
 rail_width = 64 if compact else 240
 st.markdown("<style>[data-testid=stSidebar] {width:%dpx!important;min-width:%dpx!important;max-width:%dpx!important;}" % (rail_width, rail_width, rail_width) + ('[data-testid="stSidebar"]:hover,[data-testid="stSidebar"]:focus-within {width:240px!important;min-width:240px!important;max-width:240px!important;margin-right:-176px;z-index:1000;box-shadow:4px 0 16px #34373c0d;}\n[data-testid="stSidebar"]:not(:hover):not(:focus-within) button p {width:0;max-width:0;overflow:hidden;opacity:0;}\n[data-testid="stSidebar"]:not(:hover):not(:focus-within) [data-testid="stPopoverButton"]>svg {display:none;}' if compact else "") + "</style>", unsafe_allow_html=True)
 if st.sidebar.button("ClaimScope", icon=":material/shield:", help="Pin navigation open" if compact else "Unpin navigation", key="toggle_rail", width="stretch"):
-    st.session_state.rail_compact = not compact
+    st.session_state.nav_pinned = compact
     st.rerun()
 nav = [("Claims", "table_view", "Search, filter, and export claim records"),
        ("Overview", "space_dashboard", "Compare outcomes across policyholder groups"),
@@ -345,6 +352,7 @@ for name, icon, detail in nav:
                          type="primary" if st.session_state.active_view == name else "secondary", width="stretch"):
         st.session_state.active_view = name
         st.rerun()
+st.sidebar.toggle("Keep sidebar open", key="nav_pinned", help="Lock the navigation in place")
 view = st.session_state.active_view
 head, upload_action, export_action = st.columns([6, 1.15, 1.15], gap="small", vertical_alignment="center")
 with head:
