@@ -52,86 +52,6 @@ plt.rcParams.update({"axes.grid": True, "grid.alpha": 0.25, "axes.axisbelow": Tr
 # Visual thesis: quiet white surfaces, precise type, and a single cobalt action color.
 # Content plan: navigation, portfolio metrics, searchable claims, analytical detail.
 # Interaction thesis: staggered metrics, responsive navigation, fast hover/focus feedback.
-st.markdown("""<style>
-:root { --unit:4px; --ink:#20232b; --muted:#667085; --line:#e8ebf0; --accent:#375dfb; }
-[data-testid="stAppViewContainer"] {background:#f8f9fb;}
-[data-testid="stHeader"] {background:rgba(248,249,251,.96);}
-[data-testid="stMainBlockContainer"] {padding:80px 32px 48px;max-width:1600px;}
-[data-testid="stSidebar"] {background:#fff;border-right:1px solid var(--line);width:248px!important;}
-[data-testid="stSidebar"] [data-testid="stVerticalBlock"] {gap:16px;}
-[data-testid="stVerticalBlock"] {gap:16px;}
-h1 {font-size:28px!important;letter-spacing:-1px!important;font-weight:650!important;line-height:1.3!important;}
-h2 {font-size:20px!important;letter-spacing:-.5px!important;font-weight:600!important;}
-h3 {font-size:16px!important;font-weight:600!important;}
-p, label {font-size:14px!important;line-height:1.6!important;}
-[data-testid="stCaptionContainer"] {color:var(--muted);}
-.brand {display:flex;align-items:center;gap:12px;font-size:24px;font-weight:700;letter-spacing:-1px;padding:0 0 20px;border-bottom:1px solid var(--line);}
-.brand-mark {background:#20232b;color:white;border-radius:12px;display:grid;place-items:center;width:40px;height:40px;font-size:24px;}
-.eyebrow {font-size:12px;color:#697386;font-weight:600;letter-spacing:1.2px;text-transform:uppercase;margin:4px 0 8px;}
-.page-title {font-size:24px;font-weight:650;letter-spacing:-.8px;line-height:32px;margin:0;}
-.page-subtitle {font-size:13px;color:#667085;margin:4px 0 0;}
-.kpi {background:white;border:1px solid var(--line);border-radius:16px;padding:20px 24px;min-height:148px;animation:arrive .32s ease both;transition:border-color .16s,transform .16s,box-shadow .16s;}
-.kpi:hover {border-color:#dce2ef;transform:translateY(-2px);box-shadow:0 4px 16px rgba(44,52,72,.07);}
-.kpi-label {font-size:13px;color:#667085;margin-bottom:12px;}
-.kpi-value {font-size:32px;line-height:40px;font-weight:600;letter-spacing:-1px;font-variant-numeric:tabular-nums;}
-.kpi-note {font-size:12px;color:#667085;margin-top:8px;}
-.kpi-tag {display:inline-block;background:#edf2ff;color:#3455bc;font-size:12px;border-radius:6px;padding:0 8px;vertical-align:middle;letter-spacing:0;margin-left:8px;}
-[data-testid="stDataFrame"] {border:1px solid var(--line);border-radius:12px;overflow:hidden;}
-[data-testid="stBaseButton-segmented_control"],button {transition:background .16s,border-color .16s,box-shadow .16s!important;}
-button:hover {border-color:#8ca3ff!important;}
-button:focus-visible,a:focus-visible,input:focus-visible {outline:2px solid #375dfb!important;outline-offset:4px!important;}
-button:disabled {opacity:.45;cursor:not-allowed!important;}
-[data-testid="stExpander"] {background:#fff;border:1px solid var(--line);border-radius:12px;}
-[data-testid="stAlert"] {border-radius:12px;}
-[data-testid="stSidebar"] [role="radiogroup"] label {padding:8px 12px;border-radius:8px;transition:background .16s;}
-[data-testid="stSidebar"] [role="radiogroup"] label:hover {background:#f0f3ff;}
-[data-testid="stSidebar"] [role="radiogroup"] label:has(input:checked) {background:#edf2ff;color:#375dfb;}
-[data-testid="stImage"] {background:white;border-radius:12px;overflow:hidden;}
-[data-testid="stMain"] {animation:arrive .24s ease both;}
-@keyframes arrive {from {opacity:0;transform:translateY(8px)} to {opacity:1;transform:translateY(0)}}
-@media(prefers-reduced-motion:reduce) {*,*::before,*::after {animation:none!important;transition:none!important;scroll-behavior:auto!important;}}
-@media(max-width:768px) {[data-testid="stMainBlockContainer"] {padding:72px 16px 32px;} .kpi {padding:16px;min-height:128px;} .kpi-value {font-size:28px;} .page-title {font-size:20px;} }
-</style>""", unsafe_allow_html=True)
-st.markdown("""<style>
-:root {--ink:#34373c;--muted:#75787f;--line:#ececef;--accent:#365cff;}
-html,body,[data-testid="stApp"] {color:#34373c;font-family:Arial,Helvetica,sans-serif;}
-[data-testid="stAppViewContainer"] {background:#fafafa;}
-[data-testid="stHeader"] {background:#fff;border-bottom:1px solid #ededf0;}
-[data-testid="stMainBlockContainer"] {padding:88px 24px 40px;}
-[data-testid="stVerticalBlock"] {gap:16px;}
-[data-testid="stSidebarUserContent"] {padding:16px 12px!important;}
-[data-testid="stSidebarHeader"], [data-testid="stSidebarCollapsedControl"] {display:none!important;}
-[data-testid="stSidebar"] {transition:width .2s ease,min-width .2s ease;}
-[data-testid="stSidebar"] [data-testid="stVerticalBlock"] {gap:8px;}
-.rail-brand {display:flex;align-items:center;gap:12px;height:48px;margin:0 4px 16px;font-size:20px;font-weight:600;color:#373a40;white-space:nowrap;}
-.brand-mark {width:40px;height:40px;flex-shrink:0;background:#34373c;border-radius:50%;font-weight:400;}
-[data-testid="stSidebar"] button {min-height:40px;border:0!important;border-radius:8px;box-shadow:none!important;justify-content:flex-start;padding:8px 12px;color:#73767d;background:transparent;}
-[data-testid="stSidebar"] button[kind="primary"] {background:#f0f3ff;color:#365cff;}
-[data-testid="stSidebar"] button:hover {background:#f4f5f9;color:#365cff;}
-[data-testid="stSidebar"] button:active {background:#e5eaff;transform:scale(.97);}
-h1,h2,h3,.page-title {color:#34373c!important;font-weight:500!important;letter-spacing:-.4px!important;}
-.page-title {font-size:20px;line-height:28px;}
-.page-subtitle {font-size:12px;color:#82858c;}
-h2 {font-size:20px!important;} h3 {font-size:18px!important;}
-p,label {font-size:13px!important;}
-[data-testid="stCaptionContainer"] {color:#85888f;font-size:12px;}
-.kpi {border:1px solid #eaeaec;border-radius:16px;padding:24px 20px;box-shadow:0 1px 2px #24272e04;min-height:160px;}
-.kpi-value {color:#34373c;font-size:32px;font-weight:500;letter-spacing:-1px;line-height:40px;}
-.kpi-label {font-size:13px;color:#74777e;margin-bottom:16px;}
-.kpi-note {font-size:12px;color:#92959b;margin-top:8px;}
-.kpi-tag {background:#eef2ff;color:#5b6fbc;line-height:20px;}
-[data-testid="stButton"] button,[data-testid="stDownloadButton"] button,[data-testid="stPopover"] button {font-size:13px;border-radius:8px;min-height:40px;}
-button:active {transform:translateY(1px);filter:brightness(.96);}
-input,[data-baseweb="select"]>div {border-radius:8px!important;}
-[data-testid="stDataFrame"] {background:white;border-color:#eeeef0;border-radius:12px;}
-[data-testid="stVerticalBlockBorderWrapper"]>div {border-color:#eeeef0!important;border-radius:20px!important;background:#fff;}
-@media(max-width:768px) {[data-testid="stMainBlockContainer"] {padding:80px 16px 32px;} [data-testid="stSidebar"] {min-width:80px!important;} .kpi {padding:16px;}}
-@media(prefers-reduced-motion:reduce) {*,*::before,*::after {transition:none!important;animation:none!important;}}
-[data-testid="stApp"] p,[data-testid="stApp"] label,[data-testid="stApp"] small,
-[data-testid="stCaptionContainer"], [data-testid="stTooltipContent"],input,button,
-[data-baseweb="select"],.eyebrow,.kpi-tag,.kpi-note {font-size: max(12px, 0.75rem)!important;}
-[data-testid="stVerticalBlockBorderWrapper"]>div {padding:24px!important;}
-</style>""", unsafe_allow_html=True)
 plt.rcParams.update({"axes.spines.top":False,"axes.spines.right":False,
                      "axes.edgecolor":"#E8EBF0","grid.color":"#E8EBF0",
                      "text.color":"#20232B","axes.labelcolor":"#667085",
@@ -276,68 +196,13 @@ def cramers_v(df, col, target="REPUDIATED"):
 # ----------------------------------------------------------------------------
 # Sidebar
 # ----------------------------------------------------------------------------
-st.markdown("""<style>
-/* One brand control, one aligned icon column, no selected-state boxes. */
-[data-testid="stSidebar"] button {justify-content:flex-start!important;padding:8px 12px!important;min-height:40px!important;}
-[data-testid="stSidebar"] button[kind="primary"] {background:transparent!important;color:#365cff!important;}
-[data-testid="stSidebar"] button:hover {background:transparent!important;color:#34373c!important;}
-[data-testid="stSidebar"] button:active {background:transparent!important;color:#26292f!important;transform:translateY(1px);}
-.st-key-toggle_rail {margin-bottom:16px;}
-.st-key-toggle_rail button {height:48px!important;color:#45484f!important;}
-.st-key-toggle_rail button [data-testid="stIconMaterial"] {background:#373a40;color:white;border-radius:50%;padding:8px;font-size:24px!important;min-width:40px;height:40px;}
-.st-key-toggle_rail button:hover [data-testid="stIconMaterial"] {font-size:0!important;}
-.st-key-toggle_rail button:hover [data-testid="stIconMaterial"]::after {content:'›';font-family:Arial,sans-serif;font-size:28px;line-height:24px;}
-[data-testid="stButton"] button:hover,[data-testid="stDownloadButton"] button:hover,[data-testid="stPopover"] button:hover {border-color:#b3b6be!important;filter:brightness(.94);box-shadow:none!important;}
-[data-testid="stSidebar"] button:hover {filter:none!important;}
-[data-testid="stMainBlockContainer"] {padding-top:64px!important;}
-.kpi {margin-bottom:16px;}
-</style>""", unsafe_allow_html=True)
-st.markdown("""<style>
-:root {--space:4px;--radius:8px;}
-[data-testid="stSidebarContent"] {padding:0!important;}
-[data-testid="stSidebarUserContent"]>div {padding:0!important;}
-[data-testid="stSidebar"] [data-testid="stVerticalBlock"] {padding-left:0!important;padding-right:0!important;}
-[data-testid="stSidebar"] button>div {min-width:0!important;}
-.st-key-nav_pinned {padding:4px 8px;}
-[data-testid="stSidebar"]:not(:hover):not(:focus-within) .st-key-nav_pinned {overflow:hidden;max-height:0;padding:0;visibility:hidden;}
-
-[data-testid="stSidebar"] button>div,[data-testid="stSidebar"] button>div>span {display:flex!important;width:100%;justify-content:flex-start!important;gap:12px!important;}
-[data-testid="stPopoverBody"] {max-height:calc(100vh - 48px);overflow-y:auto;}
-
-[data-testid="stElementContainer"]:has(style) {display:none!important;}
-[data-testid="stMainBlockContainer"] [data-testid="stLayoutWrapper"]:has(.kpi) {min-height:144px!important;}
-
-[data-testid="stSidebarUserContent"] {padding:12px 8px!important;overflow:hidden;}
-[data-testid="stSidebar"] [data-testid="stVerticalBlock"] {gap:4px!important;}
-[data-testid="stSidebar"] button {height:32px!important;min-height:32px!important;padding:4px 12px!important;gap:12px!important;border-radius:8px!important;white-space:nowrap;}
-[data-testid="stSidebar"] button p {font-size:13px!important;white-space:nowrap;}
-[data-testid="stSidebar"] [data-testid="stIconMaterial"] {font-size:20px!important;min-width:20px;}
-.st-key-toggle_rail {margin-bottom:8px!important;}
-.st-key-toggle_rail button {height:40px!important;min-height:40px!important;}
-.st-key-toggle_rail button [data-testid="stIconMaterial"] {min-width:24px!important;width:24px!important;height:24px!important;padding:0!important;border-radius:8px!important;background:transparent!important;color:#484b52!important;}
-.st-key-toggle_rail button:hover [data-testid="stIconMaterial"] {font-size:0!important;}
-.st-key-toggle_rail button:hover [data-testid="stIconMaterial"]::after {font-size:24px!important;}
-[data-testid="stSidebar"] [data-testid="stCaptionContainer"] {padding:8px 12px;}
-[data-testid="stSidebar"] [data-testid="stPopoverButton"] {margin-top:8px;}
-[data-testid="stMainBlockContainer"] {padding:64px 24px 32px!important;}
-[data-testid="stMainBlockContainer"] [data-testid="stVerticalBlock"] {gap:16px!important;}
-.kpi {margin:0!important;min-height:144px!important;padding:20px!important;border-radius:8px!important;}
-.kpi-label {margin-bottom:12px!important;}
-.kpi-note {margin-top:8px!important;}
-[data-testid="stVerticalBlockBorderWrapper"]>div {border-radius:8px!important;padding:20px!important;background:#fff!important;}
-[data-testid="stMainBlockContainer"] button {min-height:36px!important;height:36px!important;padding:4px 12px!important;white-space:nowrap;}
-button,input,[data-baseweb="select"]>div,[data-testid="stExpander"],[data-testid="stDataFrame"],[data-testid="stAlert"],[data-testid="stPopoverBody"] {border-radius:8px!important;}
-[data-testid="stPopoverBody"] {min-width:320px;max-width:min(400px,calc(100vw - 32px));}
-[data-testid="stPopoverBody"] [data-testid="stVerticalBlock"] {gap:12px!important;}
-@media(max-width:768px) {[data-testid="stMainBlockContainer"] {padding:64px 16px 24px!important;} [data-testid="stSidebar"]:hover {box-shadow:none!important;}}
-</style>""", unsafe_allow_html=True)
 # A persistent rail uses the same navigation controls in both sizes.
 if "nav_pinned" not in st.session_state: st.session_state.nav_pinned = False
 if "active_view" not in st.session_state: st.session_state.active_view = "Claims"
 compact = not st.session_state.nav_pinned
 rail_width = 64 if compact else 240
-st.markdown("<style>[data-testid=stSidebar] {width:%dpx!important;min-width:%dpx!important;max-width:%dpx!important;}" % (rail_width, rail_width, rail_width) + ('[data-testid="stSidebar"]:hover,[data-testid="stSidebar"]:focus-within {width:240px!important;min-width:240px!important;max-width:240px!important;margin-right:-176px;z-index:1000;box-shadow:4px 0 16px #34373c0d;}\n[data-testid="stSidebar"]:not(:hover):not(:focus-within) button p {width:0;max-width:0;overflow:hidden;opacity:0;}\n[data-testid="stSidebar"]:not(:hover):not(:focus-within) [data-testid="stPopoverButton"]>svg {display:none;}' if compact else "") + "</style>", unsafe_allow_html=True)
-if st.sidebar.button("ClaimScope", icon=":material/shield:", help="Pin navigation open" if compact else "Unpin navigation", key="toggle_rail", width="stretch"):
+st.markdown("<style>[data-testid=stSidebar]{width:%dpx!important;min-width:%dpx!important;max-width:%dpx!important;}</style>" % (rail_width,rail_width,rail_width), unsafe_allow_html=True)
+if st.sidebar.button("" if compact else "ClaimScope", icon=":material/shield:", help="Expand navigation" if compact else "Collapse navigation", key="toggle_rail", width="stretch"):
     st.session_state.nav_pinned = compact
     st.rerun()
 nav = [("Claims", "table_view", "Search, filter, and export claim records"),
@@ -348,16 +213,18 @@ nav = [("Claims", "table_view", "Search, filter, and export claim records"),
        ("Evaluation", "monitoring", "Inspect ROC curves and prediction errors"),
        ("Findings", "description", "Review dataset findings and audit next steps")]
 for name, icon, detail in nav:
-    if st.sidebar.button(name, icon=f":material/{icon}:", help=f"{name} — {detail}", key="nav_" + name,
+    if st.sidebar.button("" if compact else name, icon=f":material/{icon}:", help=f"{name} — {detail}", key="nav_" + name,
                          type="primary" if st.session_state.active_view == name else "secondary", width="stretch"):
         st.session_state.active_view = name
         st.rerun()
-st.sidebar.toggle("Keep sidebar open", key="nav_pinned", help="Lock the navigation in place")
 view = st.session_state.active_view
-head, upload_action, export_action = st.columns([6, 1.15, 1.15], gap="small", vertical_alignment="center")
+st.markdown(Path(__file__).with_name("ui.css").read_text().join(["<style>", "</style>"]), unsafe_allow_html=True)
+head, actions = st.columns([1.2, 1], gap="small", vertical_alignment="center")
 with head:
     st.markdown('<div class="page-title">Insurance claims dashboard</div><div class="page-subtitle">Review outcomes, explore disparities, and evaluate predictive models.</div>', unsafe_allow_html=True)
-with upload_action:
+with actions:
+    action_bar = st.container(horizontal=True, horizontal_alignment="right", vertical_alignment="center", gap="small", key="header_actions")
+with action_bar:
     with st.popover("Upload claims", icon=":material/upload_file:", width="content"):
         up = st.file_uploader("Upload claims CSV", type=["csv"], help="Use the 14-column sample schema. Maximum 10 MB.")
         st.download_button("Download CSV template", Path(__file__).with_name("Insurance.csv").read_text().splitlines()[0] + "\n", "claims_template.csv", "text/csv", width="stretch")
@@ -371,27 +238,34 @@ except (ValueError, OSError, UnicodeError, pd.errors.ParserError) as exc:
     st.error(str(exc))
     st.info("Open Upload claims above. Replace the CSV, or remove it to return to the bundled sample.")
     st.stop()
-with st.sidebar.popover("Model settings", icon=":material/settings:", help="Configure training and feature preparation", width="stretch"):
-    st.subheader("Model settings")
-    st.caption("Changes apply when you save. Models use the complete loaded dataset.")
+if "model_config" not in st.session_state:
+    st.session_state.model_config = dict(test_size=.25, seed=42, zone_top=15, state_top=15, occ_top=12, reason_top=12)
+
+@st.dialog("Model settings", width="medium")
+def model_settings_dialog():
+    cfg = st.session_state.model_config
+    st.caption("Configure the training split and feature preparation. Changes apply only when saved.")
     with st.form("model_configuration", border=False):
         st.markdown("**Training**")
-        test_size = st.slider("Holdout for evaluation", 0.15, 0.40, 0.25, 0.05, format="%.2f", help="Fraction reserved for testing; remaining claims train the models.")
-        seed = st.number_input("Reproducibility seed", value=42, min_value=0, max_value=4294967295, step=1)
+        split = st.slider("Holdout for evaluation", .15, .40, cfg["test_size"], .05, help="Fraction reserved for testing. Remaining claims train the models.")
+        random_seed = st.number_input("Reproducibility seed", min_value=0, max_value=4294967295, value=cfg["seed"], step=1)
         st.markdown("**Category limits**")
         st.caption("Keep the most frequent categories; combine the rest as Other.")
-        left, right = st.columns(2)
-        zone_top = left.number_input("Teams", min_value=5, max_value=30, value=15, step=1)
-        state_top = right.number_input("States", min_value=5, max_value=30, value=15, step=1)
-        occ_top = left.number_input("Occupations", min_value=5, max_value=25, value=12, step=1)
-        reason_top = right.number_input("Claim reasons", min_value=5, max_value=25, value=12, step=1)
-        saved = st.form_submit_button("Apply settings", type="primary", icon=":material/check:")
-    if saved: st.success("Settings applied.")
-if not compact:
-    st.sidebar.caption("Yudha’s workspace · ClaimScope")
-    st.sidebar.caption("Disparities are audit leads, not proof of bias.")
-with export_action:
+        left,right = st.columns(2)
+        zones = left.number_input("Teams", min_value=5, max_value=30, value=cfg["zone_top"])
+        states = right.number_input("States", min_value=5, max_value=30, value=cfg["state_top"])
+        occupations = left.number_input("Occupations", min_value=5, max_value=25, value=cfg["occ_top"])
+        reasons = right.number_input("Claim reasons", min_value=5, max_value=25, value=cfg["reason_top"])
+        if st.form_submit_button("Apply settings", type="primary", icon=":material/check:"):
+            st.session_state.model_config = dict(test_size=split, seed=random_seed, zone_top=zones, state_top=states, occ_top=occupations, reason_top=reasons)
+            st.rerun()
+
+cfg = st.session_state.model_config
+test_size, seed, zone_top, state_top, occ_top, reason_top = [cfg[k] for k in ["test_size", "seed", "zone_top", "state_top", "occ_top", "reason_top"]]
+with action_bar:
     st.download_button("Export claims", df.to_csv(index=False).encode(), "claims.csv", "text/csv", type="primary", icon=":material/download:", width="content")
+    if st.button("Model settings", icon=":material/tune:", key="open_model_settings", width="content"):
+        model_settings_dialog()
 overall = df["REPUDIATED"].mean()
 for i, (col, label, value, tag, note) in enumerate(zip(st.columns(4),
     ["Total claims", "Approved claims", "Repudiated claims", "Income recorded"],
@@ -572,7 +446,7 @@ if view == "Data preparation":
         comparison = pd.DataFrame({"Original value":raw[field].astype(str).head(20), "Prepared value":df[field].astype(str).head(20)})
         st.dataframe(comparison, hide_index=True, width="stretch")
     with preview:
-        st.caption("Use Model settings in the navigation to adjust category limits. Preview updates immediately.")
+        st.caption("Use Model settings in the top right to adjust category limits. Preview updates immediately.")
         X, y, num, cat = build_design_matrix(df, zone_top, state_top, occ_top, reason_top)
         selected = st.multiselect("Preview columns", list(X.columns), default=list(X.columns)[:6])
         if selected:
