@@ -24,13 +24,7 @@ import html
 from pathlib import Path
 import numpy as np
 import pandas as pd
-import matplotlib
-matplotlib.use("Agg")
-import matplotlib.pyplot as plt
-from matplotlib import font_manager
-for font_file in (Path(__file__).parent / "assets" / "fonts").glob("*.ttf"):
-    font_manager.fontManager.addfont(str(font_file))
-plt.rcParams["font.family"] = "Product Sans"
+import altair as alt
 import streamlit as st
 from scipy.stats import chi2_contingency
 from sklearn.model_selection import train_test_split
@@ -59,19 +53,140 @@ def product_font_css():
 st.markdown("<style>" + product_font_css() + Path(__file__).with_name("ui.css").read_text() + "</style>", unsafe_allow_html=True)
 
 
-NAVY, RED, GREEN, ORANGE, GREY = "#375DFB", "#C25263", "#23876C", "#8798DC", "#778196"
-ACCENT = [NAVY, RED, GREEN, ORANGE]
-plt.rcParams.update({"axes.grid": True, "grid.alpha": 0.25, "axes.axisbelow": True,
-                     "font.size": 12})
+# Colours below pass the colourblind-separation checks on a white surface.
+NAVY, RED, GREY = "#375DFB", "#C25263", "#778196"
+MODEL_COLORS = ["#375DFB", "#EB6834", "#1BAF7A", "#6B3FA0"]
+INK, AXIS_TEXT, LINE = "#34373C", "#5F636B", "#E9EAED"
 
 # Visual thesis: quiet white surfaces, precise type, and a single cobalt action color.
 # Content plan: navigation, portfolio metrics, searchable claims, analytical detail.
 # Interaction thesis: staggered metrics, responsive navigation, fast hover/focus feedback.
-plt.rcParams.update({"axes.spines.top":False,"axes.spines.right":False,
-                     "axes.edgecolor":"#E8EBF0","grid.color":"#E8EBF0",
-                     "text.color":"#20232B","axes.labelcolor":"#667085",
-                     "xtick.color":"#667085","ytick.color":"#667085",
-                     "figure.facecolor":"white","axes.facecolor":"white"})
+
+def show_chart(chart):
+    """Draw a chart as SVG, so it stays sharp at any size and redraws from live data."""
+    chart = (chart.properties(usermeta={"embedOptions": {"renderer": "svg"}})
+             .configure(font="Product Sans", background="white", padding=8)
+             .configure_view(stroke=None)
+             .configure_axis(labelFontSize=12, labelColor=AXIS_TEXT, labelLimit=240,
+                             titleFontSize=12, titleFontWeight="normal", titleColor=AXIS_TEXT,
+                             gridColor=LINE, domainColor=LINE, ticks=False, tickCount=6, labelPadding=6)
+             .configure_legend(orient="top", title=None, labelFontSize=12, labelColor=INK,
+                               symbolType="square", labelLimit=320)
+             .configure_title(anchor="start", fontSize=14, fontWeight="normal", color=INK,
+                              subtitleFontSize=12, subtitleColor=AXIS_TEXT))
+    st.altair_chart(chart, width="stretch", theme=None)
+
+def interval_label(interval):
+    """Readable range for a pandas Interval, e.g. 45,000–90,000."""
+    return f"{max(interval.left, 0):,.0f}–{interval.right:,.0f}"
+
+def rate_chart(g, overall, horizontal=True):
+    """Repudiation rate per group from a frame with mean/count, in display order, against the overall rate."""
+    if g.empty:
+        st.info("No groups meet this threshold. Lower it to see results.")
+        return
+    above, below = f"Above overall ({overall*100:.0f}%)", f"At or below overall ({overall*100:.0f}%)"
+    data = pd.DataFrame({"Group": g.index.astype(str), "Rate": (g["mean"] * 100).to_numpy(),
+                         "Claims": g["count"].to_numpy()})
+    data["Position"] = np.where(g["mean"] > overall, above, below)
+    data["Label"] = [f"{m:.0f}% (n={n})" for m, n in zip(data.Rate, data.Claims)]
+    data["RateLabel"] = [f"{m:.0f}%" for m in data.Rate]
+    data["CountLabel"] = [f"n={n}" for n in data.Claims]
+    domain = [0, max(data.Rate.max(), overall * 100) * 1.3]
+    rate = alt.Scale(domain=domain, nice=False)
+    rate_axis = alt.Axis(title="Repudiation %", grid=True)
+    tooltip = [alt.Tooltip("Group:N"), alt.Tooltip("Rate:Q", title="Repudiation %", format=".1f"),
+               alt.Tooltip("Claims:Q", format=",")]
+    color = alt.Color("Position:N", scale=alt.Scale(domain=[above, below], range=[RED, NAVY]))
+    base = alt.Chart(data)
+    reference = alt.Chart(pd.DataFrame({"Overall": [overall * 100]})).mark_rule(
+        color=INK, strokeDash=[4, 4], strokeWidth=1.5)
+    if horizontal:
+        order = data.Group.tolist()[::-1]
+        group = alt.Y("Group:N", sort=order, title=None, axis=alt.Axis(grid=False))
+        value = alt.X("Rate:Q", scale=rate, axis=rate_axis)
+        bars = base.mark_bar(cornerRadiusEnd=4, height={"band": .72}).encode(y=group, x=value, color=color, tooltip=tooltip)
+        labels = base.mark_text(align="left", dx=4, color=INK, fontSize=12).encode(y=group, x=value, text="Label:N")
+        line = reference.encode(x=alt.X("Overall:Q", scale=rate), tooltip=alt.Tooltip("Overall:Q", format=".1f"))
+        height = 30 * len(data) + 70
+    else:
+        group = alt.X("Group:N", sort=data.Group.tolist(), title=None, axis=alt.Axis(grid=False, labelAngle=0))
+        value = alt.Y("Rate:Q", scale=rate, axis=rate_axis)
+        bars = base.mark_bar(cornerRadiusEnd=4, width={"band": .72}).encode(x=group, y=value, color=color, tooltip=tooltip)
+        labels = (base.mark_text(baseline="bottom", dy=-18, color=INK, fontSize=12).encode(x=group, y=value, text="RateLabel:N")
+                  + base.mark_text(baseline="bottom", dy=-4, color=AXIS_TEXT, fontSize=12).encode(x=group, y=value, text="CountLabel:N"))
+        line = reference.encode(y=alt.Y("Overall:Q", scale=rate), tooltip=alt.Tooltip("Overall:Q", format=".1f"))
+        height = 320
+    show_chart((bars + line + labels).properties(height=height))
+
+def value_bars(labels, values, value_title, fmt=",.0f", groups=None):
+    """Ranked horizontal bars, drawn top-down in the order given; groups maps group name to colour."""
+    data = pd.DataFrame({"Item": [str(x) for x in labels], "Value": [float(x) for x in values]})
+    if data.empty:
+        st.info("Nothing to chart for this selection.")
+        return
+    item = alt.Y("Item:N", sort=data.Item.tolist(), title=None, axis=alt.Axis(grid=False))
+    value = alt.X("Value:Q", title=value_title, scale=alt.Scale(domain=[0, max(data.Value.max(), 1e-9) * 1.18], nice=False))
+    tooltip = [alt.Tooltip("Item:N"), alt.Tooltip("Value:Q", title=value_title, format=fmt)]
+    if groups:
+        data["Group"] = groups["assign"]
+        color = alt.Color("Group:N", scale=alt.Scale(domain=list(groups["colors"]), range=list(groups["colors"].values())))
+    else:
+        color = alt.value(NAVY)
+    base = alt.Chart(data)
+    bars = base.mark_bar(cornerRadiusEnd=4, height={"band": .72}).encode(y=item, x=value, color=color, tooltip=tooltip)
+    text = base.mark_text(align="left", dx=4, color=INK, fontSize=12).encode(y=item, x=value, text=alt.Text("Value:Q", format=fmt))
+    show_chart((bars + text).properties(height=30 * len(data) + (90 if groups else 60)))
+
+def roc_chart(results):
+    names = {name: f"{name} (AUC={r['roc_auc']:.3f})" for name, r in results.items()}
+    data = pd.concat([pd.DataFrame({"Model": names[name], "FPR": r["roc"][0], "TPR": r["roc"][1]})
+                      for name, r in results.items()], ignore_index=True)
+    unit = alt.Scale(domain=[0, 1], nice=False)
+    x = alt.X("FPR:Q", title="False positive rate", scale=unit)
+    y = alt.Y("TPR:Q", title="True positive rate", scale=unit)
+    palette = alt.Scale(domain=list(names.values()), range=MODEL_COLORS[:len(names)])
+    color = alt.Color("Model:N", scale=palette)
+    hover = alt.selection_point(name="roc_hover", on="pointerover", nearest=True, empty=False, clear="pointerout", fields=["Model", "FPR", "TPR"])
+    chance = alt.Chart(pd.DataFrame({"FPR": [0, 1], "TPR": [0, 1]})).mark_line(color=GREY, strokeDash=[4, 4], strokeWidth=1.5).encode(x=x, y=y)
+    base = alt.Chart(data)
+    lines = base.mark_line(strokeWidth=2).encode(x=x, y=y, color=color)
+    targets = base.mark_point(opacity=0, size=300).encode(
+        x=x, y=y, color=color,
+        tooltip=[alt.Tooltip("Model:N"), alt.Tooltip("FPR:Q", title="False positive rate", format=".3f"),
+                 alt.Tooltip("TPR:Q", title="True positive rate", format=".3f")]).add_params(hover)
+    marker = base.mark_circle(size=80, stroke="white", strokeWidth=2, opacity=1).encode(
+        x=x, y=y, color=color).transform_filter(hover)
+    show_chart((chance + lines + targets + marker).properties(height=440))
+
+def metric_chart(results):
+    labels = {"test_acc": "Test Acc", "precision": "Precision", "recall": "Recall", "f1": "F1", "roc_auc": "ROC-AUC"}
+    data = pd.DataFrame([{"Model": name, "Metric": label, "Score": r[key]}
+                         for name, r in results.items() for key, label in labels.items()])
+    show_chart(alt.Chart(data).mark_bar(cornerRadiusEnd=4).encode(
+        x=alt.X("Metric:N", sort=list(labels.values()), title=None, axis=alt.Axis(labelAngle=0, grid=False)),
+        xOffset=alt.XOffset("Model:N", sort=list(results), scale=alt.Scale(paddingInner=.12)),
+        y=alt.Y("Score:Q", title="Score", scale=alt.Scale(domain=[0, 1])),
+        color=alt.Color("Model:N", sort=list(results), scale=alt.Scale(domain=list(results), range=MODEL_COLORS[:len(results)])),
+        tooltip=[alt.Tooltip("Model:N"), alt.Tooltip("Metric:N"), alt.Tooltip("Score:Q", format=".3f")],
+    ).properties(height=340))
+
+def confusion_chart(name, r, largest):
+    """Two-by-two matrix; every matrix shares one colour scale so they compare directly."""
+    cm, classes = r["cm"], ["Approve", "Repudiate"]
+    data = pd.DataFrame([{"Actual": classes[a], "Predicted": classes[b], "Claims": int(cm[a, b]),
+                          "Share": cm[a, b] / max(cm.sum(), 1)} for a in range(2) for b in range(2)])
+    x = alt.X("Predicted:N", sort=classes, axis=alt.Axis(orient="bottom", labelAngle=0, grid=False))
+    y = alt.Y("Actual:N", sort=classes, axis=alt.Axis(grid=False))
+    cells = alt.Chart(data).mark_rect(cornerRadius=4, stroke="white", strokeWidth=2).encode(
+        x=x, y=y, color=alt.Color("Claims:Q", legend=None, scale=alt.Scale(domain=[0, largest], range=["#EEF2FF", NAVY])),
+        tooltip=[alt.Tooltip("Actual:N"), alt.Tooltip("Predicted:N"), alt.Tooltip("Claims:Q", format=","),
+                 alt.Tooltip("Share:Q", title="Share of test set", format=".1%")])
+    counts = alt.Chart(data).mark_text(fontSize=16, fontWeight="bold").encode(
+        x=x, y=y, text=alt.Text("Claims:Q", format=","),
+        color=alt.condition(f"datum.Claims > {largest * .55}", alt.value("white"), alt.value(INK)))
+    show_chart((cells + counts).properties(height=220, title=alt.TitleParams(
+        name, subtitle=f"acc={r['test_acc']:.2f} · recall={r['recall']:.2f}")))
 
 TARGET = "POLICY_STATUS"
 POSITIVE_LABEL = "Repudiate Death"          # positive class = a rejected claim
@@ -346,14 +461,8 @@ if view == "Overview":
     # chart
     g = df.groupby(sel)["REPUDIATED"].agg(["mean", "count"])
     g = g[g["count"] >= 5].sort_values("mean")
-    fig, ax = plt.subplots(figsize=(9, max(3, 0.35 * len(g))))
-    colors = [RED if m > overall else GREEN for m in g["mean"]]
-    ax.barh(g.index.astype(str), g["mean"] * 100, color=colors)
-    ax.axvline(overall * 100, color=NAVY, ls="--", lw=1.4, label=f"Overall {overall*100:.0f}%")
-    for i, (m, n) in enumerate(zip(g["mean"], g["count"])):
-        ax.text(m * 100 + 0.4, i, f"{m*100:.0f}% (n={n})", va="center", fontsize=12)
-    ax.set_xlabel("Repudiation %"); ax.legend(); ax.set_title(f"Repudiation rate by {sel}")
-    st.pyplot(fig, width='stretch')
+    st.subheader(f"Repudiation rate by {sel}")
+    rate_chart(g, overall)
 
     st.subheader("Numeric summary by outcome")
     num_cols = [c for c in ["PI_AGE", "SUM_ASSURED", "PI_ANNUAL_INCOME"] if c in df.columns]
@@ -385,14 +494,10 @@ if view == "Disparities":
                "χ²/V and violate the test's small-cell assumptions — read ZONE/STATE/"
                "PAYMENT_MODE as the robust, interpretable drivers.")
 
-    fig, ax = plt.subplots(figsize=(9, 0.5 * len(assoc) + 1))
-    a2 = assoc.sort_values("Cramér's V")
-    bar_colors = [GREY if "—" in s else NAVY for s in a2["significant (p<0.05)"]]
-    ax.barh(a2["Factor"], a2["Cramér's V"], color=bar_colors)
-    for i, v in enumerate(a2["Cramér's V"]):
-        ax.text(v + 0.004, i, f"{v:.3f}", va="center", fontsize=12)
-    ax.set_xlabel("Cramér's V (effect size)")
-    st.pyplot(fig, width='stretch')
+    significant, not_significant = "Significant (p<0.05)", "Not significant (p≥0.05)"
+    value_bars(assoc["Factor"], assoc["Cramér's V"], "Cramér's V (effect size)", fmt=".3f", groups={
+        "assign": [not_significant if "—" in x else significant for x in assoc["significant (p<0.05)"]],
+        "colors": {significant: NAVY, not_significant: GREY}})
 
     colA, colB = st.columns(2)
 
@@ -402,13 +507,7 @@ if view == "Disparities":
         minn = st.slider("Min claims per team", 10, 60, 25, key="zmin")
         g = df.groupby("ZONE")["REPUDIATED"].agg(["mean", "count"])
         g = g[g["count"] >= minn].sort_values("mean")
-        fig, ax = plt.subplots(figsize=(7, max(3, 0.34 * len(g))))
-        ax.barh(g.index, g["mean"] * 100, color=[RED if m > overall else GREEN for m in g["mean"]])
-        ax.axvline(overall * 100, color=NAVY, ls="--", lw=1.3)
-        for i, (m, n) in enumerate(zip(g["mean"], g["count"])):
-            ax.text(m*100+0.4, i, f"{m*100:.0f}% (n={n})", va="center", fontsize=12)
-        ax.set_xlabel("Repudiation %")
-        st.pyplot(fig, width='stretch')
+        rate_chart(g, overall)
         if len(g) >= 2:
             hi, lo = g.iloc[-1], g.iloc[0]
             st.error(f"Spread: **{g.index[-1]} {hi['mean']*100:.0f}%** vs "
@@ -422,13 +521,7 @@ if view == "Disparities":
         labs = ["<18", "18-29", "30-39", "40-49", "50-59", "60-69", "70+"]
         ab = pd.cut(df["PI_AGE"], bins=bins, labels=labs, right=False)
         g = df.assign(AB=ab).groupby("AB", observed=True)["REPUDIATED"].agg(["mean", "count"])
-        fig, ax = plt.subplots(figsize=(7, 4))
-        ax.bar(g.index.astype(str), g["mean"] * 100, color=NAVY)
-        ax.axhline(overall * 100, color=RED, ls="--", lw=1.3)
-        for i, (m, n) in enumerate(zip(g["mean"], g["count"])):
-            ax.text(i, m*100+0.6, f"{m*100:.0f}%\nn={n}", ha="center", fontsize=12)
-        ax.set_ylabel("Repudiation %")
-        st.pyplot(fig, width='stretch')
+        rate_chart(g, overall, horizontal=False)
 
         st.subheader("By INCOME QUARTILE")
         income_min = st.number_input("Minimum recorded annual income", min_value=0, value=0, step=10000, help="Explore income groups above this threshold. Model training still uses the complete dataset.")
@@ -438,13 +531,8 @@ if view == "Disparities":
         if len(dz) > 20:
             dz["Q"] = pd.qcut(dz["PI_ANNUAL_INCOME"], 4, duplicates="drop")
             g = dz.groupby("Q", observed=True)["REPUDIATED"].agg(["mean", "count"])
-            fig, ax = plt.subplots(figsize=(7, 3.5))
-            ax.bar(g.index.astype(str), g["mean"] * 100, color=ORANGE)
-            ax.axhline(overall * 100, color=RED, ls="--", lw=1.3)
-            for i, (m, n) in enumerate(zip(g["mean"], g["count"])):
-                ax.text(i, m*100+0.6, f"{m*100:.0f}%\nn={n}", ha="center", fontsize=12)
-            ax.set_ylabel("Repudiation %")
-            st.pyplot(fig, width='stretch')
+            g.index = [interval_label(q) for q in g.index]
+            rate_chart(g, overall, horizontal=False)
 
 # ============================== TAB 3 — FEATURE ENGINEERING ================
 if view == "Data preparation":
@@ -460,12 +548,14 @@ if view == "Data preparation":
         m3.metric("Distinct values", f"{raw[field].nunique():,}")
         if field == "PI_ANNUAL_INCOME":
             st.info("Zero income means not recorded. The model flags these records and imputes income from the training set median.")
-            st.bar_chart(pd.Series({"Recorded":int((df[field]>0).sum()), "Missing or zero":int((df[field].fillna(0)<=0).sum())}), color=NAVY)
+            value_bars(["Recorded", "Missing or zero"], [int((df[field]>0).sum()), int((df[field].fillna(0)<=0).sum())], "Claims")
         elif field in ["PI_AGE", "SUM_ASSURED"]:
-            st.bar_chart(df[field].value_counts(bins=12).sort_index().rename_axis("Range").reset_index(name="Claims").assign(Range=lambda x:x.Range.astype(str)).set_index("Range"), color=NAVY)
+            counts = df[field].value_counts(bins=12).sort_index()
+            value_bars([interval_label(i) for i in counts.index], counts.to_numpy(), "Claims")
         else:
             limit = st.slider("Categories to preview", 4, 24, 12, step=4)
-            st.bar_chart(df[field].value_counts().head(limit), color=NAVY)
+            counts = df[field].value_counts().head(limit)
+            value_bars(counts.index, counts.to_numpy(), "Claims")
         comparison = pd.DataFrame({"Original value":raw[field].astype(str).head(20), "Prepared value":df[field].astype(str).head(20)})
         st.dataframe(comparison, hide_index=True, width="stretch")
     with preview:
@@ -528,45 +618,20 @@ if view == "Evaluation":
     results, _ = train_models(X, y, num, cat, test_size, int(seed))
 
     st.subheader("ROC curves")
-    fig, ax = plt.subplots(figsize=(7, 5.5))
-    for (name, r), c in zip(results.items(), ACCENT):
-        fpr, tpr, _ = r["roc"]
-        ax.plot(fpr, tpr, color=c, lw=2, label=f"{name} (AUC={r['roc_auc']:.3f})")
-    ax.plot([0, 1], [0, 1], "k--", lw=1, alpha=0.6)
-    ax.set_xlabel("False Positive Rate"); ax.set_ylabel("True Positive Rate")
-    ax.legend(loc="lower right")
-    st.pyplot(fig, width='stretch')
+    roc_chart(results)
     st.caption("AUC well above 0.5 ⇒ there is learnable structure: the outcome is "
                "*predictable* from policy attributes. Combined with Tab 2, much of that "
                "structure is the processing channel (ZONE/STATE).")
 
     st.subheader("Metric comparison")
-    fig, ax = plt.subplots(figsize=(9, 4.5))
-    mets = ["test_acc", "precision", "recall", "f1", "roc_auc"]
-    labels = ["Test Acc", "Precision", "Recall", "F1", "ROC-AUC"]
-    xx = np.arange(len(labels)); w = 0.2
-    for i, ((name, r), c) in enumerate(zip(results.items(), ACCENT)):
-        ax.bar(xx + i*w - 1.5*w, [r[m] for m in mets], w, label=name, color=c)
-    ax.set_xticks(xx); ax.set_xticklabels(labels); ax.set_ylim(0, 1); ax.legend(ncol=2, fontsize=12)
-    st.pyplot(fig, width='stretch')
+    metric_chart(results)
 
     st.subheader("Confusion matrices (test set)")
     cols = st.columns(2)
+    largest = max(int(r["cm"].max()) for r in results.values())
     for i, (name, r) in enumerate(results.items()):
         with cols[i % 2]:
-            cm = r["cm"]
-            fig, ax = plt.subplots(figsize=(4.2, 3.6))
-            im = ax.imshow(cm, cmap="Blues")
-            for a in range(2):
-                for b in range(2):
-                    ax.text(b, a, cm[a, b], ha="center", va="center", fontweight="bold",
-                            color="white" if cm[a, b] > cm.max()/2 else NAVY, fontsize=13)
-            ax.set_xticks([0, 1]); ax.set_yticks([0, 1])
-            ax.set_xticklabels(["Pred Approve", "Pred Repud"])
-            ax.set_yticklabels(["Act Approve", "Act Repud"]); ax.grid(False)
-            ax.set_title(f"{name}\nacc={r['test_acc']:.2f} · recall={r['recall']:.2f}",
-                         fontsize=12)
-            st.pyplot(fig, width='stretch')
+            confusion_chart(name, r, largest)
 
     # feature importance (RF)
     st.subheader("Feature importance (Random Forest)")
@@ -575,11 +640,8 @@ if view == "Evaluation":
     X, y, num, cat = build_design_matrix(df, zone_top, state_top, occ_top, reason_top)
     feat = num + list(ohe.get_feature_names_out(cat))
     imp = pd.Series(rf.named_steps["clf"].feature_importances_, index=feat)
-    imp = imp.sort_values(ascending=False).head(15)[::-1]
-    fig, ax = plt.subplots(figsize=(9, 5))
-    ax.barh(imp.index, imp.values, color=GREEN)
-    ax.set_xlabel("Importance")
-    st.pyplot(fig, width='stretch')
+    imp = imp.sort_values(ascending=False).head(15)
+    value_bars(imp.index, imp.values, "Importance", fmt=".3f")
     st.caption("One-hot encoding splits each categorical across many dummies, so the "
                "*aggregate* importance of ZONE/STATE is understated here — sum the dummies "
                "to gauge a factor's true weight.")
