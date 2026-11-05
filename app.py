@@ -276,13 +276,27 @@ def cramers_v(df, col, target="REPUDIATED"):
 # ----------------------------------------------------------------------------
 # Sidebar
 # ----------------------------------------------------------------------------
+st.markdown("""<style>
+/* One brand control, one aligned icon column, no selected-state boxes. */
+[data-testid="stSidebar"] button {justify-content:flex-start!important;padding:8px 12px!important;min-height:40px!important;}
+[data-testid="stSidebar"] button[kind="primary"] {background:transparent!important;color:#365cff!important;}
+[data-testid="stSidebar"] button:hover {background:transparent!important;color:#34373c!important;}
+[data-testid="stSidebar"] button:active {background:transparent!important;color:#26292f!important;transform:translateY(1px);}
+.st-key-toggle_rail {margin-bottom:16px;}
+.st-key-toggle_rail button {height:48px!important;color:#45484f!important;}
+.st-key-toggle_rail button [data-testid="stIconMaterial"] {background:#373a40;color:white;border-radius:50%;padding:8px;font-size:24px!important;min-width:40px;height:40px;}
+.st-key-toggle_rail button:hover [data-testid="stIconMaterial"] {font-size:0!important;}
+.st-key-toggle_rail button:hover [data-testid="stIconMaterial"]::after {content:'›';font-family:Arial,sans-serif;font-size:28px;line-height:24px;}
+[data-testid="stButton"] button:hover,[data-testid="stDownloadButton"] button:hover,[data-testid="stPopover"] button:hover {border-color:#b3b6be!important;filter:brightness(.94);box-shadow:none!important;}
+[data-testid="stSidebar"] button:hover {filter:none!important;}
+[data-testid="stMainBlockContainer"] {padding-top:80px!important;}
+</style>""", unsafe_allow_html=True)
 # A persistent rail uses the same navigation controls in both sizes.
 if "rail_compact" not in st.session_state: st.session_state.rail_compact = True
 if "active_view" not in st.session_state: st.session_state.active_view = "Claims"
 compact = st.session_state.rail_compact
 st.markdown(f"<style>[data-testid='stSidebar'] {{width:{80 if compact else 248}px!important;min-width:{80 if compact else 248}px!important;}} </style>", unsafe_allow_html=True)
-st.sidebar.markdown('<div class="rail-brand"><span class="brand-mark">◈</span>' + ('' if compact else '<span>ClaimScope</span>') + '</div>', unsafe_allow_html=True)
-if st.sidebar.button("" if compact else "Collapse navigation", icon=":material/menu_open:" if not compact else ":material/menu:", help="Expand ClaimScope navigation" if compact else "Collapse to icon rail", key="toggle_rail", width="stretch"):
+if st.sidebar.button("" if compact else "ClaimScope", icon=":material/shield:", help="Expand navigation" if compact else "Collapse navigation", key="toggle_rail", width="stretch"):
     st.session_state.rail_compact = not compact
     st.rerun()
 nav = [("Claims", "table_view", "Search, filter, and export claim records"),
@@ -298,12 +312,13 @@ for name, icon, detail in nav:
         st.session_state.active_view = name
         st.rerun()
 view = st.session_state.active_view
-st.sidebar.divider()
-# Keep the controls accessible in compact mode through labeled popovers.
-source_panel = st.sidebar.popover("" if compact else "Data source", icon=":material/upload_file:", help="Data source — upload a CSV or download the template", width="stretch")
-with source_panel:
-    up = st.file_uploader("Upload claims CSV", type=["csv"], help="Upload the same 14-column schema as the bundled sample. Maximum 10 MB.")
-    st.download_button("Download CSV template", Path(__file__).with_name("Insurance.csv").read_text().splitlines()[0] + "\n", "claims_template.csv", "text/csv", width="stretch")
+head, upload_action, export_action = st.columns([3, 1, 1], vertical_alignment="center")
+with head:
+    st.markdown('<div class="page-title">Insurance claims dashboard</div><div class="page-subtitle">Review outcomes, explore disparities, and evaluate predictive models.</div>', unsafe_allow_html=True)
+with upload_action:
+    with st.popover("Upload claims", icon=":material/upload_file:", width="stretch"):
+        up = st.file_uploader("Upload claims CSV", type=["csv"], help="Use the 14-column sample schema. Maximum 10 MB.")
+        st.download_button("Download CSV template", Path(__file__).with_name("Insurance.csv").read_text().splitlines()[0] + "\n", "claims_template.csv", "text/csv", width="stretch")
 file_bytes = up.getvalue() if up is not None else None
 try:
     if file_bytes is not None and len(file_bytes) > 10*1024*1024:
@@ -312,7 +327,7 @@ try:
 except (ValueError, OSError, UnicodeError, pd.errors.ParserError) as exc:
     st.title("Unable to load claims")
     st.error(str(exc))
-    st.info("Open Data source in the sidebar. Replace the CSV, or remove it to return to the bundled sample.")
+    st.info("Open Upload claims above. Replace the CSV, or remove it to return to the bundled sample.")
     st.stop()
 with st.sidebar.popover("" if compact else "Model settings", icon=":material/settings:", help="Model settings — split, seed, and category limits", width="stretch"):
     test_size = st.slider("Test split", 0.15, 0.40, 0.25, 0.05)
@@ -324,15 +339,8 @@ with st.sidebar.popover("" if compact else "Model settings", icon=":material/set
 if not compact:
     st.sidebar.caption("Yudha’s workspace · ClaimScope")
     st.sidebar.caption("Disparities are audit leads, not proof of bias.")
-head, action = st.columns([4, 1])
-with head:
-    st.markdown('<div class="page-title">Insurance claims dashboard</div><div class="page-subtitle">Review outcomes, explore disparities, and evaluate predictive models.</div>', unsafe_allow_html=True)
-with action:
+with export_action:
     st.download_button("Export claims", df.to_csv(index=False).encode(), "claims.csv", "text/csv", type="primary", icon=":material/download:", width="stretch")
-with st.popover("", icon=":material/database:", help="Data source and record count"):
-    st.write("Uploaded dataset" if up else "Bundled sample")
-    if up: st.caption(up.name)
-    st.caption(f"{len(df):,} insurance claims · {len(df.columns)} fields")
 overall = df["REPUDIATED"].mean()
 for i, (col, label, value, tag, note) in enumerate(zip(st.columns(4),
     ["Total claims", "Approved claims", "Repudiated claims", "Income recorded"],
@@ -340,7 +348,6 @@ for i, (col, label, value, tag, note) in enumerate(zip(st.columns(4),
     ["All records", f"{(1-overall)*100:.1f}%", f"{overall*100:.1f}%", "Data quality"],
     ["Current dataset", "Share of all claims", "Share of all claims", "Non-zero annual income"])):
     col.markdown(f'<div class="kpi" style="animation-delay:{i*40}ms"><div class="kpi-label">{label}</div><div class="kpi-value">{value}</div><div class="kpi-note">{note}<span class="kpi-tag">{tag}</span></div></div>', unsafe_allow_html=True)
-st.divider()
 if view == "Claims":
     with st.container(border=True):
         st.subheader("Claim records", icon=":material/table_view:")
@@ -439,7 +446,6 @@ if view == "Disparities":
     ax.set_xlabel("Cramér's V (effect size)")
     st.pyplot(fig, width='stretch')
 
-    st.divider()
     colA, colB = st.columns(2)
 
     # team / zone
