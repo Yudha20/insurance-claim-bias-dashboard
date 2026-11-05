@@ -74,3 +74,8 @@ button:focus-visible,input:focus-visible {outline:2px solid var(--accent);outlin
 [data-testid=stMain], [data-testid=stMainBlockContainer], [data-testid=stColumn] {min-width:0;}
 [data-testid=stDataFrame] {contain:inline-size;max-width:100%;}
 [data-testid=stToast] {font-family:"Product Sans",sans-serif;font-size:13px;border-radius:12px;}
+/* Current Streamlit combobox: only the enclosing group owns a border. */
+.react-aria-ComboBox [role=group] {border:1px solid #e1e3e8!important;border-radius:12px!important;box-shadow:none!important;background:#fff;}
+.react-aria-ComboBox [role=group]:focus-within {border-color:#365cff!important;}
+.react-aria-ComboBox input {border:0!important;outline:none!important;box-shadow:none!important;background:transparent!important;border-radius:0!important;}
+.react-aria-ComboBox button,.react-aria-ComboBox button:hover,.react-aria-ComboBox button:active {border:0!important;outline:none!important;box-shadow:none!important;background:transparent!important;filter:none!important;min-height:0!important;border-radius:0!important;}
